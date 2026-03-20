@@ -103,10 +103,6 @@ input,select,textarea{font-family:var(--sans);}
       <div class="name">Bili</div>
       <div class="sub">Bilinguale KI-Lernplattform 🇨🇭</div>
     </div>
-    <div class="login-tabs">
-      <button class="login-tab active" id="ltab-login" onclick="setLTab('login')">Einloggen</button>
-      <button class="login-tab" id="ltab-register" onclick="setLTab('register')">Registrieren</button>
-    </div>
     <div id="lf-login">
       <div class="field"><label>E-Mail</label><input class="inp" type="email" id="l-email" placeholder="name@schule.ch" onkeydown="if(event.key==='Enter')doLogin()"></div>
       <div class="field"><label>Passwort</label><input class="inp" type="password" id="l-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
@@ -114,27 +110,7 @@ input,select,textarea{font-family:var(--sans);}
       <button class="btn btn-teal" style="width:100%;justify-content:center;padding:12px;" id="l-btn" onclick="doLogin()">Einloggen →</button>
       <div style="text-align:center;margin-top:12px;"><span style="font-size:11px;color:var(--gray-m);cursor:pointer;" onclick="demoLogin()">Demo ohne Account</span></div>
     </div>
-    <div id="lf-register" style="display:none;">
-      <div class="g2">
-        <div class="field"><label>Vorname</label><input class="inp" id="r-fn" placeholder="Anna"></div>
-        <div class="field"><label>Nachname</label><input class="inp" id="r-ln" placeholder="Meier"></div>
-      </div>
-      <div class="field"><label>E-Mail</label><input class="inp" type="email" id="r-email" placeholder="name@schule.ch"></div>
-      <div class="field"><label>Passwort</label><input class="inp" type="password" id="r-pass" placeholder="Mindestens 8 Zeichen"></div>
-      <div class="field"><label>Rolle</label>
-        <select class="sel" id="r-rolle">
-          <option value="lehrperson">Lehrperson</option>
-          <option value="schulleitung">Schulleitung</option>
-          <option value="schueler">Schüler/in</option>
-        </select>
-      </div>
-      <div class="field"><label>Sprache</label>
-        <select class="sel" id="r-lang"><option value="DE">Deutsch</option><option value="EN">English</option><option value="bilingual">Bilingual</option></select>
-      </div>
-      <div id="r-err" style="color:var(--red);font-size:12px;text-align:center;margin-bottom:8px;min-height:16px;"></div>
-      <button class="btn btn-teal" style="width:100%;justify-content:center;padding:12px;" id="r-btn" onclick="doRegister()">Account erstellen →</button>
     </div>
-  </div>
 </div>
 
 <!-- APP -->
@@ -191,12 +167,6 @@ let CU = null;
 let DEMO = false;
 
 // ─── AUTH ───────────────────────────────────────────────
-function setLTab(t){
-  document.getElementById('ltab-login').classList.toggle('active',t==='login');
-  document.getElementById('ltab-register').classList.toggle('active',t==='register');
-  document.getElementById('lf-login').style.display=t==='login'?'block':'none';
-  document.getElementById('lf-register').style.display=t==='register'?'block':'none';
-}
 
 async function doLogin(){
   const email=document.getElementById('l-email').value.trim();
