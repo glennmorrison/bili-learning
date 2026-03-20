@@ -3,41 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SIS AI Learning</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Bili Learning</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --teal:#0F6E56;--teal-m:#1D9E75;--teal-l:#E1F5EE;--teal-d:#085041;
-  --purple:#534AB7;--purple-l:#EEEDFE;--purple-d:#3C3489;
-  --coral:#993C1D;--coral-l:#FAECE7;
-  --amber:#854F0B;--amber-l:#FAEEDA;
-  --gray:#2C2C2A;--gray-m:#73726C;--gray-l:#F1EFE8;--gray-ll:#F8F7F2;
-  --green:#3B6D11;--green-l:#EAF3DE;
-  --red:#A32D2D;--red-l:#FCEBEB;
-  --border:#E0DED6;--surface:#fff;
-  --r:12px;--rs:8px;
-  --serif:'DM Serif Display',Georgia,serif;
-  --sans:'DM Sans',sans-serif;
-  --mono:'DM Mono',monospace;
-}
+:root{--teal:#0F6E56;--teal-m:#1D9E75;--teal-l:#E1F5EE;--teal-d:#085041;--purple:#534AB7;--purple-l:#EEEDFE;--coral:#993C1D;--coral-l:#FAECE7;--amber:#854F0B;--amber-l:#FAEEDA;--gray:#2C2C2A;--gray-m:#73726C;--gray-l:#F1EFE8;--gray-ll:#F8F7F2;--green:#3B6D11;--green-l:#EAF3DE;--red:#A32D2D;--red-l:#FCEBEB;--border:#E0DED6;--surface:#fff;--r:12px;--rs:8px;--serif:'DM Serif Display',Georgia,serif;--sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:var(--sans);background:var(--gray-ll);color:var(--gray);font-size:14px;line-height:1.5;}
-
-/* ── SHARED ── */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--rs);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:var(--sans);}
-.btn-teal{background:var(--teal);color:#fff;} .btn-teal:hover{background:var(--teal-m);}
-.btn-purple{background:var(--purple);color:#fff;} .btn-purple:hover{opacity:.9;}
-.btn-ghost{background:transparent;color:var(--gray);border:1.5px solid var(--border);} .btn-ghost:hover{border-color:var(--teal);color:var(--teal);}
-.btn-sm{padding:6px 13px;font-size:12px;}
-.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn-teal{background:var(--teal);color:#fff;}.btn-teal:hover{background:var(--teal-m);}
+.btn-purple{background:var(--purple);color:#fff;}.btn-purple:hover{opacity:.9;}
+.btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--gray);}.btn-ghost:hover{border-color:var(--teal);color:var(--teal);}
+.btn-sm{padding:5px 12px;font-size:12px;}.btn:disabled{opacity:.45;cursor:not-allowed;}
 .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500;}
-.pill-teal{background:var(--teal-l);color:var(--teal);}
-.pill-purple{background:var(--purple-l);color:var(--purple);}
-.pill-green{background:var(--green-l);color:var(--green);}
-.pill-amber{background:var(--amber-l);color:var(--amber);}
-.pill-coral{background:var(--coral-l);color:var(--coral);}
-.pill-gray{background:var(--gray-l);color:var(--gray-m);}
-.pill-red{background:var(--red-l);color:var(--red);}
+.pill-teal{background:var(--teal-l);color:var(--teal);}.pill-purple{background:var(--purple-l);color:var(--purple);}.pill-green{background:var(--green-l);color:var(--green);}.pill-amber{background:var(--amber-l);color:var(--amber);}.pill-coral{background:var(--coral-l);color:var(--coral);}.pill-gray{background:var(--gray-l);color:var(--gray-m);}.pill-red{background:var(--red-l);color:var(--red);}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;}
 .card-title{font-size:11px;font-weight:600;color:var(--gray-m);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;}
 .alert{border-radius:var(--rs);padding:10px 14px;font-size:13px;margin-bottom:8px;border-left:3px solid;}
@@ -47,7 +26,6 @@ body{font-family:var(--sans);background:var(--gray-ll);color:var(--gray);font-si
 .alert-teal{background:var(--teal-l);color:var(--teal);border-color:var(--teal);}
 .progress-bar{background:var(--gray-l);border-radius:4px;height:6px;overflow:hidden;}
 .progress-fill{height:100%;border-radius:4px;transition:width .5s;}
-input,select,textarea{font-family:var(--sans);}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spinner{width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
 @keyframes loadbar{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
@@ -55,224 +33,140 @@ input,select,textarea{font-family:var(--sans);}
 .loadbar::after{content:'';position:absolute;inset:0;background:var(--teal);animation:loadbar 1.1s ease infinite;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .fade-up{animation:fadeUp .25s ease both;}
+input,select,textarea{font-family:var(--sans);}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--gray-m);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.inp,.sel{width:100%;border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-size:13px;color:var(--gray);background:#fff;transition:border .15s;outline:none;}
+.inp:focus,.sel:focus{border-color:var(--teal);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;}
+.stat-val{font-size:26px;font-weight:700;font-family:var(--serif);}
+.stat-label{font-size:11px;color:var(--gray-m);margin-top:1px;}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.tbl th{background:var(--gray-l);padding:7px 11px;text-align:left;font-size:10px;font-weight:600;color:var(--gray-m);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);}
+.tbl td{padding:9px 11px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}.tbl tr:hover td{background:var(--gray-ll);}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:18px;}
+.tab{padding:8px 15px;cursor:pointer;font-size:13px;color:var(--gray-m);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+.tab:hover{color:var(--gray);}.tab.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:500;}
+.ms-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .15s;margin-bottom:8px;}
+.ms-card:hover{border-color:var(--teal);transform:translateY(-1px);}
+.ms-card.locked{opacity:.4;cursor:not-allowed;}.ms-card.locked:hover{transform:none;border-color:var(--border);}
+.task-box{background:var(--purple-l);border:1px solid #AFA9EC;border-radius:var(--r);padding:20px;}
+.task-prompt{font-size:15px;font-weight:500;color:var(--purple);line-height:1.6;margin:8px 0 14px;}
+.task-inp{width:100%;border:1.5px solid #AFA9EC;border-radius:var(--rs);padding:9px 12px;font-size:14px;background:#fff;resize:vertical;min-height:52px;font-family:var(--sans);outline:none;}
+.task-inp:focus{border-color:var(--purple);}
+.ai-fb{background:#fff;border:1px solid #AFA9EC;border-radius:var(--rs);padding:12px 14px;margin-top:10px;font-size:13px;line-height:1.6;}
 
-/* ── LOGIN ── */
+/* LOGIN */
 #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#06302a 0%,#0F6E56 55%,#1D9E75 100%);}
-.login-box{background:#fff;border-radius:20px;padding:44px 40px;width:380px;box-shadow:0 24px 60px rgba(0,0,0,.25);}
-.login-brand{text-align:center;margin-bottom:32px;}
-.login-brand .school{font-size:11px;color:var(--gray-m);letter-spacing:.1em;text-transform:uppercase;}
-.login-brand .name{font-family:var(--serif);font-size:26px;color:var(--teal);margin-top:4px;}
-.login-brand .sub{font-size:12px;color:var(--gray-m);margin-top:2px;}
-.pin-label{font-size:12px;font-weight:600;color:var(--gray);margin-bottom:6px;}
-.pin-input{width:100%;border:2px solid var(--border);border-radius:var(--rs);padding:13px 16px;font-size:22px;letter-spacing:.4em;text-align:center;font-weight:600;font-family:var(--mono);transition:border .2s;outline:none;}
-.pin-input:focus{border-color:var(--teal);}
-.pin-hint{font-size:11px;color:var(--gray-m);margin-top:6px;text-align:center;line-height:1.5;}
-.pin-error{color:var(--red);font-size:12px;text-align:center;margin-top:6px;min-height:16px;}
-.login-codes{margin-top:20px;background:var(--gray-ll);border-radius:var(--rs);padding:12px 14px;}
-.login-codes .title{font-size:10px;font-weight:600;color:var(--gray-m);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
-.code-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;}
-.code-val{font-family:var(--mono);font-weight:500;color:var(--teal);}
+.login-box{background:#fff;border-radius:20px;padding:44px 40px;width:400px;max-width:95vw;box-shadow:0 24px 60px rgba(0,0,0,.25);}
+.login-brand{text-align:center;margin-bottom:28px;}
+.login-brand .name{font-family:var(--serif);font-size:32px;color:var(--teal);}
+.login-brand .sub{font-size:12px;color:var(--gray-m);margin-top:4px;}
+.login-tabs{display:flex;gap:4px;background:var(--gray-l);padding:4px;border-radius:var(--rs);margin-bottom:20px;}
+.login-tab{flex:1;padding:7px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;background:transparent;color:var(--gray-m);font-family:var(--sans);}
+.login-tab.active{background:#fff;color:var(--teal);box-shadow:0 1px 4px rgba(0,0,0,.1);}
 
-/* ── APP SHELL ── */
+/* APP */
 #app{display:none;height:100vh;flex-direction:column;}
-.topbar{background:var(--teal-d);color:#fff;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:200;}
-.topbar-brand{display:flex;align-items:center;gap:10px;}
+.topbar{background:var(--teal-d);color:#fff;height:52px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
 .topbar-logo{font-family:var(--serif);font-size:17px;}
-.topbar-sep{width:1px;height:18px;background:rgba(255,255,255,.2);}
-.topbar-page{font-size:12px;opacity:.7;font-weight:300;}
 .app-body{display:flex;flex:1;overflow:hidden;}
-
-/* ── SIDEBAR ── */
 .sidebar{width:200px;background:var(--teal-d);color:#fff;display:flex;flex-direction:column;flex-shrink:0;}
-.sidebar-info{padding:14px 14px 10px;border-bottom:1px solid rgba(255,255,255,.12);}
+.sidebar-info{padding:14px;border-bottom:1px solid rgba(255,255,255,.12);}
 .sidebar-info .role{font-size:10px;opacity:.55;text-transform:uppercase;letter-spacing:.06em;}
 .sidebar-info .name{font-size:13px;font-weight:500;margin-top:2px;}
-.sidebar-info .klass{font-size:11px;opacity:.5;margin-top:1px;}
 .sidebar-nav{padding:8px 6px;flex:1;overflow-y:auto;}
 .nav-sec{font-size:9px;opacity:.45;letter-spacing:.08em;text-transform:uppercase;padding:8px 8px 3px;}
-.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:12px;transition:background .15s;margin-bottom:1px;color:rgba(255,255,255,.8);}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:12px;color:rgba(255,255,255,.75);transition:background .15s;margin-bottom:1px;}
 .nav-item:hover{background:rgba(255,255,255,.1);}
 .nav-item.active{background:rgba(255,255,255,.18);color:#fff;font-weight:500;}
 .nav-item .ic{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
-.nav-badge{margin-left:auto;background:var(--coral);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px;}
-
-/* ── MAIN ── */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .main-header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
 .main-title{font-family:var(--serif);font-size:18px;}
 .main-sub{font-size:11px;color:var(--gray-m);margin-top:1px;}
 .main-content{flex:1;overflow-y:auto;padding:22px;}
-
-/* ── GRIDS ── */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
-.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;}
-.stat-val{font-size:26px;font-weight:700;font-family:var(--serif);}
-.stat-label{font-size:11px;color:var(--gray-m);margin-top:1px;}
-
-/* ── TABLES ── */
-.ms-table{width:100%;border-collapse:collapse;font-size:12px;}
-.ms-table th{background:var(--gray-l);padding:7px 11px;text-align:left;font-size:10px;font-weight:600;color:var(--gray-m);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);}
-.ms-table td{padding:9px 11px;border-bottom:1px solid var(--border);vertical-align:middle;}
-.ms-table tr:last-child td{border-bottom:none;}
-.ms-table tr:hover td{background:var(--gray-ll);}
-
-/* ── HEATMAP ── */
-.hm-cell{border-radius:3px;height:16px;cursor:pointer;transition:opacity .15s;}
-.hm-cell:hover{opacity:.7;}
-
-/* ── STUDENT CARDS ── */
-.sc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px;cursor:pointer;transition:all .15s;}
-.sc-card:hover{border-color:var(--teal);box-shadow:0 2px 8px rgba(15,110,86,.1);transform:translateY(-1px);}
-
-/* ── TABS ── */
-.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px;}
-.tab{padding:8px 16px;cursor:pointer;font-size:13px;color:var(--gray-m);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
-.tab:hover{color:var(--gray);}
-.tab.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:500;}
-
-/* ── GENERATOR ── */
-.gen-layout{display:grid;grid-template-columns:340px 1fr;gap:0;height:100%;overflow:hidden;}
-.gen-panel{border-right:1px solid var(--border);overflow-y:auto;padding:20px 18px;background:var(--surface);}
-.gen-preview{overflow-y:auto;padding:20px;}
-.gen-section{margin-bottom:22px;}
-.gen-section-title{font-size:11px;font-weight:600;color:var(--teal-d);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
-.field{margin-bottom:12px;}
-.field label{display:block;font-size:11px;font-weight:600;color:var(--gray-m);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
-.inp,.sel,.ta{width:100%;border:1.5px solid var(--border);border-radius:var(--rs);padding:8px 11px;font-size:13px;font-family:var(--sans);color:var(--gray);background:#fff;transition:border .15s;outline:none;}
-.inp:focus,.sel:focus,.ta:focus{border-color:var(--teal);}
-.ta{resize:vertical;min-height:60px;line-height:1.5;}
-.toggle-row{display:grid;gap:4px;}
-.toggle-row.cols-2{grid-template-columns:1fr 1fr;}
-.toggle-row.cols-3{grid-template-columns:1fr 1fr 1fr;}
-.toggle-row.cols-4{grid-template-columns:1fr 1fr 1fr 1fr;}
-.tog-btn{padding:7px 4px;border:1.5px solid var(--border);border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;text-align:center;background:#fff;color:var(--gray-m);transition:all .15s;font-family:var(--sans);}
-.tog-btn.on{border-color:var(--teal);background:var(--teal-l);color:var(--teal);}
-.s-chip{display:flex;align-items:center;gap:5px;padding:3px 9px 3px 5px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1.5px solid var(--border);background:#fff;color:var(--gray-m);transition:all .15s;user-select:none;}
-.s-chip .av{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;flex-shrink:0;}
-.s-chip.on{border-color:var(--teal);background:var(--teal-l);color:var(--teal);}
-.ms-chip{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:500;cursor:pointer;border:1.5px solid var(--border);background:#fff;color:var(--gray-m);transition:all .15s;user-select:none;font-family:var(--mono);}
-.ms-chip.on{border-color:var(--purple);background:var(--purple-l);color:var(--purple);}
-.big-btn{width:100%;padding:13px;border:none;border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
-.big-btn.teal{background:var(--teal);color:#fff;} .big-btn.teal:hover{background:var(--teal-m);transform:translateY(-1px);box-shadow:0 4px 14px rgba(15,110,86,.3);}
-.big-btn.ghost{background:#fff;color:var(--gray);border:1.5px solid var(--border);} .big-btn.ghost:hover{border-color:var(--teal);color:var(--teal);}
-.big-btn.disabled{background:var(--gray-l);color:var(--gray-m);cursor:not-allowed;}
-
-/* ── WORKSHEET ── */
-.ws{background:#fff;border-radius:var(--r);box-shadow:0 2px 12px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.04);margin-bottom:16px;overflow:hidden;}
-.ws-inner{padding:28px 32px;}
-.ws-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;padding-bottom:14px;border-bottom:2.5px solid var(--teal-d);}
-.ws-school{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:2px;}
-.ws-title{font-family:var(--serif);font-size:20px;color:var(--gray);}
-.ws-name{font-family:var(--serif);font-size:15px;text-align:right;}
-.ws-date{font-size:10px;color:var(--gray-m);text-align:right;margin-top:2px;}
-.ws-infobar{display:flex;gap:14px;margin-bottom:16px;padding:8px 12px;background:var(--gray-ll);border-radius:var(--rs);font-size:10px;color:var(--gray-m);}
-.task-item{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);}
-.task-item:last-child{border:none;margin:0;padding:0;}
-.task-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;}
-.task-num{width:24px;height:24px;border-radius:50%;background:var(--teal-d);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
-.task-ctx{font-size:11px;color:var(--gray-m);font-style:italic;margin-bottom:3px;}
-.task-q{font-size:13px;font-weight:500;line-height:1.6;}
-.task-space{margin-top:8px;border:1px dashed var(--border);border-radius:6px;background:var(--gray-ll);}
-.task-ms{font-size:9px;font-family:var(--mono);color:var(--gray-m);background:var(--gray-l);padding:1px 5px;border-radius:3px;margin-left:auto;flex-shrink:0;}
-.ws-footer-bar{display:flex;gap:8px;padding:10px 14px;background:var(--gray-ll);border-top:1px solid var(--border);}
-.ws-foot{display:flex;justify-content:space-between;font-size:9px;color:var(--gray-m);margin-top:14px;padding-top:10px;border-top:1px solid var(--border);}
-
-/* ── UPLOAD ── */
-.upload-zone{border:2px dashed var(--border);border-radius:var(--r);padding:32px;text-align:center;transition:all .2s;cursor:pointer;background:#fff;}
-.upload-zone:hover,.upload-zone.drag{border-color:var(--teal);background:var(--teal-l);}
-.upload-zone.drag{transform:scale(1.01);}
-.upload-icon{font-size:36px;margin-bottom:10px;}
-.upload-title{font-family:var(--serif);font-size:18px;margin-bottom:4px;}
-.upload-sub{font-size:12px;color:var(--gray-m);}
-
-/* ── RESULT CARDS ── */
-.result-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px;}
-.result-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
-.result-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
-.result-body{padding:14px 16px;}
-.ms-result-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;}
-.ms-result-row:last-child{border:none;}
-.ms-status-before{width:80px;text-align:right;}
-.ms-arrow{color:var(--gray-m);font-size:14px;}
-.ms-status-after{width:80px;}
-
-/* ── STUDENT SHELL ── */
 .student-hero{background:linear-gradient(135deg,var(--teal-d),var(--teal-m));color:#fff;padding:24px;}
-.student-body{padding:20px;max-width:640px;margin:0 auto;}
 .xp-wrap{background:rgba(255,255,255,.2);border-radius:8px;height:8px;margin-top:10px;overflow:hidden;}
 .xp-fill{height:100%;background:#fff;border-radius:8px;transition:width .6s;}
-.ms-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .15s;margin-bottom:8px;}
-.ms-card:hover{border-color:var(--teal);transform:translateY(-1px);}
-.ms-card.locked{opacity:.4;cursor:not-allowed;}
-.ms-card.locked:hover{transform:none;border-color:var(--border);}
-.ms-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
-
-/* ── TASK BOX ── */
-.task-box{background:var(--purple-l);border:1px solid #AFA9EC;border-radius:var(--r);padding:20px;}
-.task-prompt{font-size:15px;font-weight:500;color:var(--purple);line-height:1.6;margin:8px 0 14px;}
-.task-ctx-s{font-size:12px;color:var(--gray-m);font-style:italic;margin-bottom:6px;}
-.task-inp{width:100%;border:1.5px solid #AFA9EC;border-radius:var(--rs);padding:9px 12px;font-size:14px;background:#fff;resize:vertical;min-height:52px;font-family:var(--sans);outline:none;}
-.task-inp:focus{border-color:var(--purple);}
-.ai-fb{background:#fff;border:1px solid #AFA9EC;border-radius:var(--rs);padding:12px 14px;margin-top:10px;font-size:13px;line-height:1.6;}
-.ai-fb-label{font-size:10px;font-weight:600;color:var(--purple);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
-
-@media print{
-  .sidebar,.topbar,.main-header,.ws-footer-bar,#gen-panel{display:none!important;}
-  .gen-layout{display:block;}
-  .gen-preview{padding:0;}
-  .ws{box-shadow:none;border-radius:0;page-break-after:always;}
-}
 </style>
 </head>
 <body>
 
-<!-- ═══════ LOGIN ═══════ -->
-<div id="login-screen">
+<!-- LOGIN -->
+<div id="login-screen" style="display:none;">
   <div class="login-box">
     <div class="login-brand">
-      <div class="school">SIS Swiss International School</div>
-      <div class="name">AI Learning</div>
-      <div class="sub">Mathematik Klasse 5b</div>
+      <div class="name">Bili</div>
+      <div class="sub">Bilinguale KI-Lernplattform 🇨🇭</div>
     </div>
-    <div class="pin-label">Zugangscode</div>
-    <input class="pin-input" id="pin-inp" type="password" maxlength="4" placeholder="••••"
-      oninput="this.value=this.value.replace(/\D/g,'')" onkeydown="if(event.key==='Enter')doLogin()">
-    <div class="pin-hint">Schüler: persönlicher 4-stelliger Code<br>Lehrperson: <strong>9999</strong></div>
-    <div class="pin-error" id="pin-err"></div>
-    <button class="btn btn-teal" style="width:100%;justify-content:center;margin-top:14px;padding:12px;" onclick="doLogin()">Einloggen →</button>
-    <div class="login-codes">
-      <div class="title">Demo-Codes</div>
-      <div class="code-row"><span>Lehrperson</span><span class="code-val">9999</span></div>
-      <div class="code-row"><span>Noah Fischer (EN, Lücke)</span><span class="code-val">1002</span></div>
-      <div class="code-row"><span>Sofia Chen (Vertiefung)</span><span class="code-val">1003</span></div>
-      <div class="code-row"><span>Max Brunner (Förderung)</span><span class="code-val">1004</span></div>
+    <div class="login-tabs">
+      <button class="login-tab active" id="ltab-login" onclick="setLTab('login')">Einloggen</button>
+      <button class="login-tab" id="ltab-register" onclick="setLTab('register')">Registrieren</button>
+    </div>
+    <div id="lf-login">
+      <div class="field"><label>E-Mail</label><input class="inp" type="email" id="l-email" placeholder="name@schule.ch" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="field"><label>Passwort</label><input class="inp" type="password" id="l-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div id="l-err" style="color:var(--red);font-size:12px;text-align:center;margin-bottom:8px;min-height:16px;"></div>
+      <button class="btn btn-teal" style="width:100%;justify-content:center;padding:12px;" id="l-btn" onclick="doLogin()">Einloggen →</button>
+      <div style="text-align:center;margin-top:12px;"><span style="font-size:11px;color:var(--gray-m);cursor:pointer;" onclick="demoLogin()">Demo ohne Account</span></div>
+    </div>
+    <div id="lf-register" style="display:none;">
+      <div class="g2">
+        <div class="field"><label>Vorname</label><input class="inp" id="r-fn" placeholder="Anna"></div>
+        <div class="field"><label>Nachname</label><input class="inp" id="r-ln" placeholder="Meier"></div>
+      </div>
+      <div class="field"><label>E-Mail</label><input class="inp" type="email" id="r-email" placeholder="name@schule.ch"></div>
+      <div class="field"><label>Passwort</label><input class="inp" type="password" id="r-pass" placeholder="Mindestens 8 Zeichen"></div>
+      <div class="field"><label>Rolle</label>
+        <select class="sel" id="r-rolle">
+          <option value="lehrperson">Lehrperson</option>
+          <option value="schulleitung">Schulleitung</option>
+          <option value="schueler">Schüler/in</option>
+        </select>
+      </div>
+      <div class="field"><label>Sprache</label>
+        <select class="sel" id="r-lang"><option value="DE">Deutsch</option><option value="EN">English</option><option value="bilingual">Bilingual</option></select>
+      </div>
+      <div id="r-err" style="color:var(--red);font-size:12px;text-align:center;margin-bottom:8px;min-height:16px;"></div>
+      <button class="btn btn-teal" style="width:100%;justify-content:center;padding:12px;" id="r-btn" onclick="doRegister()">Account erstellen →</button>
     </div>
   </div>
 </div>
 
-<!-- ═══════ APP ═══════ -->
+<!-- APP -->
 <div id="app">
   <div class="topbar">
-    <div class="topbar-brand">
-      <div class="topbar-logo">SIS AI Learning</div>
-      <div class="topbar-sep"></div>
-      <div class="topbar-page" id="tb-page">Dashboard</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="topbar-logo">Bili</div>
+      <div style="width:1px;height:18px;background:rgba(255,255,255,.2);"></div>
+      <div style="font-size:12px;opacity:.65;" id="tb-page">Dashboard</div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
       <span id="tb-user" style="font-size:12px;opacity:.7;"></span>
-      <button class="btn btn-ghost btn-sm" style="color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.2);" onclick="logout()">Ausloggen</button>
+      <button class="btn-ghost btn btn-sm" style="color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.2);" onclick="doLogout()">Ausloggen</button>
     </div>
   </div>
   <div class="app-body" id="app-body"></div>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════
-// DATA
-// ═══════════════════════════════════════════════════════
-const MS = [
+// ─── SUPABASE ───────────────────────────────────────────
+const SB_URL = 'https://kcvfsmugfsfupzccynoi.supabase.co';
+const SB_KEY = localStorage.getItem('sb_key') || '';
+
+let sb = null;
+function initSB() {
+  const key = localStorage.getItem('sb_key');
+  if(key && SB_URL) { sb = supabase.createClient(SB_URL, key); return true; }
+  return false;
+}
+
+// ─── MILESTONES ─────────────────────────────────────────
+const MS=[
   {id:"MS1.1",unit:"Zahl",title:"Grosse Zahlen",en:"Large Numbers",bloom:"Verstehen",niv:1,pre:[]},
   {id:"MS1.2",unit:"Zahl",title:"Runden & Schätzen",en:"Rounding",bloom:"Anwenden",niv:1,pre:["MS1.1"]},
   {id:"MS2.1",unit:"Zahl",title:"Addition & Subtraktion",en:"Addition & Subtraction",bloom:"Anwenden",niv:1,pre:["MS1.1"]},
@@ -291,105 +185,84 @@ const MS = [
   {id:"MS12.2",unit:"Daten",title:"Diagramme",en:"Diagrams",bloom:"Anwenden",niv:1,pre:["MS12.1"]},
 ];
 
-const STUDENTS = [
-  {id:"s01",pin:"1001",name:"Lena Müller",av:"LM",color:"#0F6E56",lang:"DE",ms:{MS1_1:2,MS1_2:2,MS2_1:2,MS2_2:2,MS2_3:1,MS3_1:2,MS3_2:2,MS3_3:1,MS3_4:0,MS4_1:2,MS4_2:1,MS6_1:2,MS6_2:1,MS12_1:2,MS12_2:0},xp:420},
-  {id:"s02",pin:"1002",name:"Noah Fischer",av:"NF",color:"#534AB7",lang:"EN",ms:{MS1_1:2,MS1_2:2,MS2_1:2,MS2_2:1,MS2_3:0,MS3_1:2,MS3_2:-1,MS3_3:0,MS3_4:0,MS4_1:2,MS4_2:2,MS6_1:2,MS6_2:2,MS12_1:2,MS12_2:1},xp:310},
-  {id:"s03",pin:"1003",name:"Sofia Chen",av:"SC",color:"#993C1D",lang:"bilingual",ms:{MS1_1:3,MS1_2:3,MS2_1:3,MS2_2:3,MS2_3:2,MS3_1:3,MS3_2:3,MS3_3:3,MS3_4:2,MS3_5:1,MS4_1:3,MS4_2:3,MS6_1:3,MS6_2:2,MS12_1:3,MS12_2:2},xp:890},
-  {id:"s04",pin:"1004",name:"Max Brunner",av:"MB",color:"#854F0B",lang:"DE",ms:{MS1_1:2,MS1_2:1,MS2_1:1,MS2_2:0,MS3_1:1,MS3_2:0,MS4_1:1,MS6_1:1,MS6_2:0,MS12_1:1,MS12_2:0},xp:85},
-  {id:"s05",pin:"1005",name:"Emma Schneider",av:"ES",color:"#185FA5",lang:"EN",ms:{MS1_1:2,MS1_2:2,MS2_1:2,MS2_2:2,MS2_3:2,MS3_1:2,MS3_2:2,MS3_3:2,MS3_4:2,MS3_5:0,MS4_1:2,MS4_2:2,MS6_1:2,MS6_2:2,MS12_1:2,MS12_2:2},xp:620},
-  {id:"s06",pin:"1006",name:"Luca Bianchi",av:"LB",color:"#3B6D11",lang:"bilingual",ms:{MS1_1:2,MS1_2:2,MS2_1:2,MS2_2:2,MS2_3:1,MS3_1:2,MS3_2:2,MS3_3:2,MS3_4:1,MS3_5:0,MS4_1:2,MS4_2:1,MS6_1:2,MS6_2:2,MS12_1:1,MS12_2:0},xp:380},
-  {id:"s07",pin:"1007",name:"Mia Keller",av:"MK",color:"#7F77DD",lang:"DE",ms:{MS1_1:2,MS1_2:-1,MS2_1:1,MS2_2:0,MS3_1:2,MS3_2:1,MS3_3:0,MS4_1:2,MS4_2:0,MS6_1:2,MS6_2:1,MS12_1:2,MS12_2:1},xp:215},
-  {id:"s08",pin:"1008",name:"Ben Taylor",av:"BT",color:"#D85A30",lang:"EN",ms:{MS1_1:2,MS1_2:2,MS2_1:2,MS2_2:2,MS2_3:2,MS3_1:2,MS3_2:2,MS3_3:2,MS3_4:2,MS3_5:2,MS4_1:2,MS4_2:2,MS6_1:2,MS6_2:2,MS12_1:2,MS12_2:2},xp:780},
-  {id:"s09",pin:"1009",name:"Hannah Weber",av:"HW",color:"#0C447C",lang:"bilingual",ms:{MS1_1:2,MS1_2:2,MS2_1:2,MS2_2:1,MS2_3:0,MS3_1:2,MS3_2:2,MS3_3:1,MS3_4:0,MS4_1:2,MS4_2:1,MS6_1:2,MS6_2:2,MS12_1:2,MS12_2:2},xp:345},
-  {id:"s10",pin:"1010",name:"Jonas Zimmermann",av:"JZ",color:"#533489",lang:"DE",ms:{MS1_1:2,MS1_2:2,MS2_1:2,MS2_2:2,MS2_3:2,MS3_1:2,MS3_2:2,MS3_3:2,MS3_4:2,MS3_5:1,MS4_1:2,MS4_2:2,MS6_1:2,MS6_2:2,MS12_1:2,MS12_2:2},xp:710},
-  {id:"s11",pin:"1011",name:"Yasmin Özdemir",av:"YO",color:"#639922",lang:"bilingual",ms:{MS1_1:2,MS1_2:2,MS2_1:1,MS2_2:0,MS3_1:2,MS3_2:2,MS3_3:1,MS3_4:0,MS4_1:2,MS4_2:0,MS6_1:2,MS6_2:1,MS12_1:2,MS12_2:1},xp:290},
-  {id:"s12",pin:"1012",name:"Oliver Meier",av:"OM",color:"#5DCAA5",lang:"EN",ms:{MS1_1:2,MS1_2:2,MS2_1:2,MS2_2:2,MS2_3:1,MS3_1:2,MS3_2:2,MS3_3:2,MS3_4:2,MS3_5:0,MS4_1:2,MS4_2:2,MS6_1:2,MS6_2:2,MS12_1:2,MS12_2:2},xp:580},
-];
+// ─── STATE ──────────────────────────────────────────────
+let CU = null;
+let DEMO = false;
 
-// ═══════════════════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════════════════
-const mk = id => id.replace('.','_');
-function getSt(s,id){return(s.ms[mk(id)]||0);}
-function pct(s){const d=MS.filter(m=>getSt(s,m.id)>=2).length;return Math.round(d/MS.length*100);}
-function lvl(xp){return Math.floor(xp/100)+1;}
-function xpIn(xp){return xp%100;}
-function stLabel(v){return v===3?'★★★':v===2?'✓ Erreicht':v===1?'⟳ In Arbeit':v===-1?'⚠ Lücke':'—';}
-function stPill(v){
-  if(v===3)return`<span class="pill pill-purple">★★★</span>`;
-  if(v===2)return`<span class="pill pill-green">✓</span>`;
-  if(v===1)return`<span class="pill pill-amber">⟳</span>`;
-  if(v===-1)return`<span class="pill pill-red">⚠ Lücke</span>`;
-  return`<span class="pill pill-gray">—</span>`;
+// ─── AUTH ───────────────────────────────────────────────
+function setLTab(t){
+  document.getElementById('ltab-login').classList.toggle('active',t==='login');
+  document.getElementById('ltab-register').classList.toggle('active',t==='register');
+  document.getElementById('lf-login').style.display=t==='login'?'block':'none';
+  document.getElementById('lf-register').style.display=t==='register'?'block':'none';
 }
-function getAlerts(s){
-  const a=[];
-  MS.forEach(m=>{
-    const st=getSt(s,m.id);
-    if(st===-1)a.push({type:'red',text:`Lücke: ${m.id} (${m.title})`});
-    (m.pre||[]).forEach(p=>{if(st>0&&getSt(s,p)<2)a.push({type:'amber',text:`${m.id} begonnen, Prereq ${p} fehlt`});});
-  });
-  return a;
-}
-function getSD(s){
-  const saved=JSON.parse(localStorage.getItem('sis_'+s.id)||'{}');
-  return{...s,ms:{...s.ms,...(saved.ms||{})},xp:saved.xp??s.xp};
-}
-function saveSD(s,patch){
-  const cur=JSON.parse(localStorage.getItem('sis_'+s.id)||'{}');
-  localStorage.setItem('sis_'+s.id,JSON.stringify({...cur,...patch}));
-}
-function allSD(){return STUDENTS.map(s=>getSD(s));}
-function bloomColor(b){return{Verstehen:'#0F6E56',Anwenden:'#534AB7',Analysieren:'#854F0B',Erinnern:'#73726C',Evaluieren:'#993C1D',Kreieren:'#A32D2D'}[b]||'#73726C';}
 
-// ═══════════════════════════════════════════════════════
-// AUTH
-// ═══════════════════════════════════════════════════════
-let CU=null; // current user
-
-function doLogin(){
-  const pin=document.getElementById('pin-inp').value.trim();
-  document.getElementById('pin-err').textContent='';
-  if(pin==='9999'){CU={role:'teacher'};launch();return;}
-  const s=STUDENTS.find(x=>x.pin===pin);
-  if(s){CU={role:'student',student:getSD(s)};launch();return;}
-  document.getElementById('pin-err').textContent='Ungültiger Code.';
-  document.getElementById('pin-inp').value='';
-  document.getElementById('pin-inp').focus();
+async function doLogin(){
+  const email=document.getElementById('l-email').value.trim();
+  const pass=document.getElementById('l-pass').value;
+  const err=document.getElementById('l-err');
+  const btn=document.getElementById('l-btn');
+  err.textContent='';
+  btn.innerHTML='<div class="spinner"></div>';btn.disabled=true;
+  if(!sb){err.textContent='Supabase nicht konfiguriert. Publishable Key eintragen.';btn.innerHTML='Einloggen →';btn.disabled=false;return;}
+  const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error){err.textContent='Falsche E-Mail oder Passwort.';btn.innerHTML='Einloggen →';btn.disabled=false;return;}
+  await loadProfile(data.user.id);
+  launch();
 }
-function logout(){
-  CU=null;
-  document.getElementById('login-screen').style.display='flex';
+
+async function doRegister(){
+  const fn=document.getElementById('r-fn').value.trim();
+  const ln=document.getElementById('r-ln').value.trim();
+  const email=document.getElementById('r-email').value.trim();
+  const pass=document.getElementById('r-pass').value;
+  const rolle=document.getElementById('r-rolle').value;
+  const lang=document.getElementById('r-lang').value;
+  const err=document.getElementById('r-err');
+  const btn=document.getElementById('r-btn');
+  if(!fn||!ln||!email||!pass){err.textContent='Alle Felder ausfüllen.';return;}
+  if(pass.length<8){err.textContent='Passwort mind. 8 Zeichen.';return;}
+  btn.innerHTML='<div class="spinner"></div>';btn.disabled=true;
+  const {data,error}=await sb.auth.signUp({email,password:pass});
+  if(error){err.textContent=error.message;btn.innerHTML='Account erstellen →';btn.disabled=false;return;}
+  await sb.from('profiles').insert({id:data.user.id,vorname:fn,nachname:ln,email,rolle,sprache:lang,aktiv:true,einwilligung:false});
+  CU={id:data.user.id,vorname:fn,nachname:ln,email,rolle,sprache:lang};
+  launch();
+}
+
+function demoLogin(){
+  DEMO=true;
+  CU={id:'demo',vorname:'Demo',nachname:'Lehrperson',email:'demo@bili.ch',rolle:'lehrperson',sprache:'DE'};
+  launch();
+}
+
+async function loadProfile(uid){
+  const {data}=await sb.from('profiles').select('*').eq('id',uid).single();
+  if(data)CU=data;
+}
+
+async function doLogout(){
+  if(!DEMO&&sb)await sb.auth.signOut();
+  CU=null;DEMO=false;
   document.getElementById('app').style.display='none';
-  document.getElementById('pin-inp').value='';
+  document.getElementById('login-screen').style.display='flex';
 }
+
 function launch(){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').style.display='flex';
-  if(CU.role==='teacher'){
-    document.getElementById('tb-user').textContent='Lehrperson · Klasse 5b';
-    buildTeacher();
-  } else {
-    document.getElementById('tb-user').textContent=CU.student.name;
-    buildStudent();
-  }
+  document.getElementById('tb-user').textContent=(CU?.vorname||'')+(DEMO?' (Demo)':'');
+  CU?.rolle==='schueler'?buildStudent():buildTeacher();
 }
 
-// ═══════════════════════════════════════════════════════
-// TEACHER
-// ═══════════════════════════════════════════════════════
-let TV='dashboard'; // teacher view
-let TSid=null;
-let activeStudentTab='profil';
-
+// ─── TEACHER ────────────────────────────────────────────
 function buildTeacher(){
-  const alertCount=allSD().reduce((a,s)=>a+getAlerts(s).filter(x=>x.type==='red').length,0);
+  document.getElementById('tb-page').textContent='Lehrperson';
   document.getElementById('app-body').innerHTML=`
     <div class="sidebar">
       <div class="sidebar-info">
-        <div class="role">Lehrperson</div>
-        <div class="name">Mathematik</div>
-        <div class="klass">Klasse 5b · SIS</div>
+        <div class="role">${CU?.rolle==='schulleitung'?'Schulleitung':CU?.rolle==='super_admin'?'Admin':'Lehrperson'}</div>
+        <div class="name">${CU?.vorname} ${CU?.nachname}</div>
       </div>
       <div class="sidebar-nav">
         <div class="nav-sec">Übersicht</div>
@@ -397,19 +270,17 @@ function buildTeacher(){
         <div class="nav-item" id="tnav-schueler" onclick="tNav('schueler')"><span class="ic">👥</span>Schüler</div>
         <div class="nav-item" id="tnav-curriculum" onclick="tNav('curriculum')"><span class="ic">📚</span>Curriculum</div>
         <div class="nav-sec">Werkzeuge</div>
-        <div class="nav-item" id="tnav-generator" onclick="tNav('generator')"><span class="ic">📄</span>Aufgabenblatt${alertCount>0?`<span class="nav-badge">!</span>`:''}</div>
-        <div class="nav-item" id="tnav-upload" onclick="tNav('upload')"><span class="ic">📤</span>Upload & Auswertung</div>
-        <div class="nav-sec">Schüler</div>
-        ${STUDENTS.map(s=>`<div class="nav-item" id="tnav-st-${s.id}" onclick="tNavSt('${s.id}')">
-          <div class="av" style="width:18px;height:18px;border-radius:50%;background:${s.color};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;flex-shrink:0;">${s.av}</div>
-          ${s.name.split(' ')[0]}
-        </div>`).join('')}
+        <div class="nav-item" id="tnav-generator" onclick="tNav('generator')"><span class="ic">📄</span>Aufgabenblatt</div>
+        <div class="nav-item" id="tnav-upload" onclick="tNav('upload')"><span class="ic">📤</span>Upload</div>
+        <div class="nav-sec">System</div>
+        <div class="nav-item" id="tnav-setup" onclick="tNav('setup')"><span class="ic">⚙️</span>Einstellungen</div>
       </div>
     </div>
     <div class="main">
       <div class="main-header">
-        <div><div class="main-title" id="t-title">Dashboard</div><div class="main-sub" id="t-sub">Mathematik Klasse 5b · SIS</div></div>
-        <div id="t-hdr-actions"></div>
+        <div><div class="main-title" id="t-title">Dashboard</div>
+        <div class="main-sub" id="t-sub">Bili · ${DEMO?'Demo-Modus':'Supabase 🇨🇭 Zürich'}</div></div>
+        <div id="t-act"></div>
       </div>
       <div class="main-content" id="t-content"></div>
     </div>`;
@@ -417,785 +288,362 @@ function buildTeacher(){
 }
 
 function tNav(v){
-  TV=v; TSid=null;
-  document.querySelectorAll('.nav-item[id^="tnav-"]').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-item[id^="tnav-"]').forEach(e=>e.classList.remove('active'));
   const el=document.getElementById('tnav-'+v);if(el)el.classList.add('active');
-  document.getElementById('t-hdr-actions').innerHTML='';
-  const titles={dashboard:'Dashboard',schueler:'Schülerübersicht',curriculum:'Curriculum',generator:'Aufgabenblatt-Generator',upload:'Upload & Auswertung'};
-  document.getElementById('t-title').textContent=titles[v]||v;
-  document.getElementById('t-sub').textContent='Mathematik Klasse 5b · SIS';
-  if(v==='dashboard')renderDash();
-  else if(v==='schueler')renderSchueler();
-  else if(v==='curriculum')renderCurriculum();
-  else if(v==='generator')renderGenerator();
-  else if(v==='upload')renderUpload();
+  document.getElementById('t-title').textContent={dashboard:'Dashboard',schueler:'Schüler',curriculum:'Curriculum',generator:'Aufgabenblatt',upload:'Upload & Auswertung',setup:'Einstellungen'}[v]||v;
+  document.getElementById('t-act').innerHTML='';
+  ({dashboard:renderDash,schueler:renderSchueler,curriculum:renderCurr,generator:renderGen,upload:renderUpload,setup:renderSetup})[v]?.();
 }
 
-function tNavSt(sid){
-  TSid=sid;
-  document.querySelectorAll('.nav-item[id^="tnav-"]').forEach(el=>el.classList.remove('active'));
-  const el=document.getElementById('tnav-st-'+sid);if(el)el.classList.add('active');
-  const s=getSD(STUDENTS.find(x=>x.id===sid));
-  document.getElementById('t-title').textContent=s.name;
-  document.getElementById('t-sub').textContent=`${s.lang==='bilingual'?'Bilingual':s.lang==='EN'?'English':'Deutsch'} · Level ${lvl(s.xp)} · ${s.xp} XP`;
-  document.getElementById('t-hdr-actions').innerHTML=`<button class="btn btn-teal btn-sm" onclick="tNav('generator')">Aufgabe erstellen</button>`;
-  renderStudentDetail(s);
-}
-
-// Dashboard
-function renderDash(){
-  const all=allSD();
-  const gaps=all.filter(s=>MS.some(m=>getSt(s,m.id)===-1)).length;
-  const avg=Math.round(all.reduce((a,s)=>a+pct(s),0)/all.length);
-  const adv=all.filter(s=>MS.some(m=>getSt(s,m.id)===3)).length;
-  const alerts=all.flatMap(s=>getAlerts(s).slice(0,1).map(a=>({...a,name:s.name,id:s.id})));
-  document.getElementById('t-content').innerHTML=`
+async function renderDash(){
+  const c=document.getElementById('t-content');
+  c.innerHTML='<div class="loadbar"></div>';
+  let students=[];
+  if(!DEMO&&sb){const{data}=await sb.from('profiles').select('*').eq('rolle','schueler');students=data||[];}
+  c.innerHTML=`
     <div class="g4" style="margin-bottom:16px;">
-      <div class="stat"><div class="stat-val" style="color:var(--teal)">${all.length}</div><div class="stat-label">Schülerinnen & Schüler</div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--teal)">${avg}%</div><div class="stat-label">Ø Fortschritt</div>
-        <div class="progress-bar" style="margin-top:6px;"><div class="progress-fill" style="width:${avg}%;background:var(--teal)"></div></div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--red)">${gaps}</div><div class="stat-label">SuS mit Lücken</div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--purple)">${adv}</div><div class="stat-label">Vertiefungsniveau</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--teal)">${students.length}</div><div class="stat-label">Schülerinnen & Schüler</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--teal)">—</div><div class="stat-label">Ø Fortschritt</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--red)">—</div><div class="stat-label">Alerts</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--purple)">—</div><div class="stat-label">Vertiefung</div></div>
     </div>
-    <div class="g2" style="margin-bottom:16px;">
-      <div class="card">
-        <div class="card-title">⚠ Alerts</div>
-        ${alerts.length?alerts.map(a=>`<div class="alert alert-${a.type}" style="cursor:pointer;" onclick="tNavSt('${a.id}')"><strong>${a.name}</strong> — ${a.text}</div>`).join(''):'<span style="color:var(--gray-m);font-size:13px;">Keine Alerts.</span>'}
-        ${alerts.length?`<button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="tNav('generator')">Förderblätter erstellen →</button>`:''}
+    ${students.length===0?`
+      <div class="alert alert-teal" style="margin-bottom:16px;">${DEMO?'Demo-Modus.':'✓ Supabase 🇨🇭 verbunden.'} Noch keine Schüler erfasst.
+        <button class="btn btn-teal btn-sm" style="margin-left:8px;" onclick="tNav('setup')">Schüler anlegen →</button>
       </div>
       <div class="card">
-        <div class="card-title">Fortschritt nach Unit</div>
-        ${['Zahl','Brüche','Dezimal','Geo','Daten'].map(u=>{
-          const ums=MS.filter(m=>m.unit===u);
-          const p=Math.round(all.reduce((a,s)=>a+ums.filter(m=>getSt(s,m.id)>=2).length/ums.length,0)/all.length*100);
-          return`<div style="margin-bottom:9px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;"><span>${u}</span><span style="color:var(--gray-m)">${p}%</span></div>
-          <div class="progress-bar"><div class="progress-fill" style="width:${p}%;background:var(--teal)"></div></div></div>`;
-        }).join('')}
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">Klassen-Heatmap</div>
-      <div style="display:flex;gap:10px;margin-bottom:8px;font-size:10px;color:var(--gray-m);">
-        ${[['#0F6E56','Erreicht'],['#534AB7','Vertiefung'],['#BA7517','In Arbeit'],['#A32D2D','Lücke'],['#D3D1C7','Ausstehend']].map(([c,l])=>`<span><span style="display:inline-block;width:8px;height:8px;background:${c};border-radius:2px;margin-right:3px;"></span>${l}</span>`).join('')}
-      </div>
-      <div style="overflow-x:auto;">
-        <div style="display:grid;grid-template-columns:100px repeat(${MS.length},1fr);gap:2px;min-width:600px;">
-          <div></div>${MS.map(m=>`<div style="font-size:8px;color:var(--gray-m);text-align:center;" title="${m.title}">${m.id.replace('MS','')}</div>`).join('')}
-          ${all.map(s=>`
-            <div style="font-size:10px;font-weight:500;cursor:pointer;color:var(--teal);padding:2px 0;" onclick="tNavSt('${s.id}')">${s.name.split(' ')[0]}</div>
-            ${MS.map(m=>{const v=getSt(s,m.id);const c=v===3?'#534AB7':v===2?'#0F6E56':v===1?'#BA7517':v===-1?'#A32D2D':'#D3D1C7';
-            return`<div class="hm-cell" style="background:${c};" title="${s.name}·${m.id}:${stLabel(v)}" onclick="tNavSt('${s.id}')"></div>`;}).join('')}
-          `).join('')}
+        <div class="card-title">🚀 Erste Schritte</div>
+        <div style="font-size:13px;line-height:2.2;">
+          <div>1. <strong>Schüler anlegen</strong> → Einstellungen</div>
+          <div>2. <strong>Schüler einloggen</strong> lassen (E-Mail + Passwort)</div>
+          <div>3. <strong>Aufgabenblatt generieren</strong> → Generator</div>
+          <div>4. <strong>Ergebnisse hochladen</strong> → Upload</div>
         </div>
-      </div>
+      </div>`:
+      `<div class="card">
+        <div class="card-title">Schüler</div>
+        <table class="tbl"><thead><tr><th>Name</th><th>E-Mail</th><th>Sprache</th><th>Status</th></tr></thead>
+        <tbody>${students.map(s=>`<tr>
+          <td style="font-weight:500;">${s.vorname} ${s.nachname}</td>
+          <td style="color:var(--gray-m);font-size:12px;">${s.email}</td>
+          <td><span class="pill pill-purple">${s.sprache||'DE'}</span></td>
+          <td><span class="pill ${s.aktiv?'pill-green':'pill-amber'}">${s.aktiv?'Aktiv':'Ausstehend'}</span></td>
+        </tr>`).join('')}</tbody></table>
+      </div>`}`;
+}
+
+async function renderSchueler(){
+  const c=document.getElementById('t-content');
+  c.innerHTML='<div class="loadbar"></div>';
+  document.getElementById('t-act').innerHTML=`<button class="btn btn-teal btn-sm" onclick="tNav('setup')">+ Schüler anlegen</button>`;
+  let students=[];
+  if(!DEMO&&sb){const{data}=await sb.from('profiles').select('*').eq('rolle','schueler');students=data||[];}
+  c.innerHTML=students.length===0
+    ?`<div class="card" style="text-align:center;padding:40px;color:var(--gray-m);">
+        <div style="font-size:36px;margin-bottom:10px;">👥</div>
+        <div style="font-family:var(--serif);font-size:18px;color:var(--gray);">Noch keine Schüler</div>
+        <div style="font-size:13px;margin-top:6px;">Über "Einstellungen" anlegen.</div>
+      </div>`
+    :`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+      ${students.map(s=>`<div class="card">
+        <div style="font-weight:600;">${s.vorname} ${s.nachname}</div>
+        <div style="font-size:11px;color:var(--gray-m);margin-top:2px;">${s.email}</div>
+        <div style="margin-top:8px;display:flex;gap:4px;">
+          <span class="pill pill-purple" style="font-size:10px;">${s.sprache||'DE'}</span>
+          <span class="pill ${s.aktiv?'pill-green':'pill-amber'}" style="font-size:10px;">${s.aktiv?'Aktiv':'Ausstehend'}</span>
+        </div>
+      </div>`).join('')}
     </div>`;
 }
 
-// Schüler
-function renderSchueler(){
-  const all=allSD();
-  document.getElementById('t-content').innerHTML=`
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;">
-      ${all.map(s=>{
-        const p=pct(s);const g=MS.filter(m=>getSt(s,m.id)===-1).length;
-        return`<div class="sc-card" onclick="tNavSt('${s.id}')">
-          <div style="width:36px;height:36px;border-radius:50%;background:${s.color};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;margin-bottom:8px;">${s.av}</div>
-          <div style="font-weight:600;font-size:13px;">${s.name}</div>
-          <div style="font-size:11px;color:var(--gray-m);margin-bottom:8px;">XP ${s.xp} · Lvl ${lvl(s.xp)}</div>
-          <div class="progress-bar" style="margin-bottom:4px;"><div class="progress-fill" style="width:${p}%;background:${s.color}"></div></div>
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--gray-m);">
-            <span>${p}%</span>${g?`<span style="color:var(--red)">⚠ ${g}</span>`:''}
-          </div>
-        </div>`;
-      }).join('')}
-    </div>`;
-}
-
-// Curriculum
-function renderCurriculum(){
-  const all=allSD();
+function renderCurr(){
+  const c=document.getElementById('t-content');
   const units=[...new Set(MS.map(m=>m.unit))];
-  document.getElementById('t-content').innerHTML=units.map(unit=>{
-    const ms=MS.filter(m=>m.unit===unit);
-    return`<div class="card" style="margin-bottom:14px;"><div class="card-title">${unit}</div>
-    <table class="ms-table"><thead><tr><th>ID</th><th>Milestone</th><th>Bloom</th><th>★</th><th>Prereq.</th><th>Klasse %</th></tr></thead>
-    <tbody>${ms.map(m=>{
-      const p=Math.round(all.filter(s=>getSt(s,m.id)>=2).length/all.length*100);
-      return`<tr><td><code style="font-size:10px;background:var(--gray-l);padding:1px 5px;border-radius:3px;">${m.id}</code></td>
-      <td style="font-weight:500;">${m.title}</td>
-      <td><span style="font-size:11px;font-weight:500;color:${bloomColor(m.bloom)}">${m.bloom}</span></td>
-      <td>${'★'.repeat(m.niv)}</td>
-      <td style="font-size:10px;color:var(--gray-m);">${(m.pre||[]).join(', ')||'—'}</td>
-      <td><div style="display:flex;align-items:center;gap:6px;"><div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:${p}%;background:var(--teal)"></div></div><span style="font-size:10px;color:var(--gray-m);width:26px;">${p}%</span></div></td></tr>`;
-    }).join('')}</tbody></table></div>`;
+  c.innerHTML=units.map(u=>{
+    const ms=MS.filter(m=>m.unit===u);
+    return`<div class="card" style="margin-bottom:14px;">
+      <div class="card-title">${u}</div>
+      <table class="tbl"><thead><tr><th>ID</th><th>Milestone</th><th>EN</th><th>Bloom</th><th>★</th><th>Prereq.</th></tr></thead>
+      <tbody>${ms.map(m=>`<tr>
+        <td><code style="font-size:10px;background:var(--gray-l);padding:1px 5px;border-radius:3px;">${m.id}</code></td>
+        <td style="font-weight:500;">${m.title}</td>
+        <td style="font-size:11px;color:var(--gray-m);">${m.en}</td>
+        <td style="font-size:11px;">${m.bloom}</td>
+        <td>${'★'.repeat(m.niv)}</td>
+        <td style="font-size:11px;color:var(--gray-m);">${(m.pre||[]).join(', ')||'—'}</td>
+      </tr>`).join('')}</tbody></table>
+    </div>`;
   }).join('');
 }
 
-// Student Detail
-function renderStudentDetail(s){
-  const alerts=getAlerts(s);
-  const nextMs=MS.find(m=>{const st=getSt(s,m.id);return st===1||st===-1||(st===0&&(m.pre||[]).every(p=>getSt(s,p)>=2));});
-  document.getElementById('t-content').innerHTML=`
-    <div class="tabs">
-      <div class="tab ${activeStudentTab==='profil'?'active':''}" onclick="setStudentTab('profil')">Profil</div>
-      <div class="tab ${activeStudentTab==='milestones'?'active':''}" onclick="setStudentTab('milestones')">Milestones</div>
-    </div>
-    <div id="st-tab-body"></div>`;
-  renderStudentTab(s);
-}
+// ─── GENERATOR ──────────────────────────────────────────
+let GS={selMs:new Set(['MS3.4']),lang:'DE',niveau:1};
 
-function setStudentTab(tab){activeStudentTab=tab;const s=getSD(STUDENTS.find(x=>x.id===TSid));renderStudentDetail(s);}
-
-function renderStudentTab(s){
-  const body=document.getElementById('st-tab-body');
-  const alerts=getAlerts(s);
-  if(activeStudentTab==='profil'){
-    body.innerHTML=`
-      <div class="g2">
-        <div>
-          <div class="card" style="margin-bottom:14px;">
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-              <div style="width:44px;height:44px;border-radius:50%;background:${s.color};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;">${s.av}</div>
-              <div><div style="font-size:17px;font-weight:600;">${s.name}</div>
-              <div style="font-size:12px;color:var(--gray-m);">${s.lang==='bilingual'?'🌐 Bilingual':s.lang==='EN'?'🇬🇧 English':'🇩🇪 Deutsch'} · Level ${lvl(s.xp)} · ${s.xp} XP</div></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>Gesamtfortschritt</span><span>${pct(s)}%</span></div>
-            <div class="progress-bar" style="height:8px;"><div class="progress-fill" style="width:${pct(s)}%;background:${s.color}"></div></div>
-          </div>
-          ${alerts.length?`<div class="card"><div class="card-title">Alerts</div>${alerts.map(a=>`<div class="alert alert-${a.type}">${a.text}</div>`).join('')}</div>`:''}
-        </div>
-        <div class="card">
-          <div class="card-title">Unit-Fortschritt</div>
-          ${['Zahl','Brüche','Dezimal','Geo','Daten'].map(u=>{
-            const ums=MS.filter(m=>m.unit===u);
-            const done=ums.filter(m=>getSt(s,m.id)>=2).length;
-            const p=Math.round(done/ums.length*100);
-            return`<div style="margin-bottom:10px;">
-              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;"><span>${u}</span><span style="color:var(--gray-m)">${done}/${ums.length}</span></div>
-              <div class="progress-bar"><div class="progress-fill" style="width:${p}%;background:var(--teal)"></div></div>
-            </div>`;
-          }).join('')}
-        </div>
-      </div>`;
-  } else {
-    body.innerHTML=`<div class="card">
-      <table class="ms-table"><thead><tr><th>Milestone</th><th>Status</th><th>Übungs-Stand</th><th>Prereq.</th></tr></thead>
-      <tbody>${MS.map(m=>{
-        const st=getSt(s,m.id);
-        const pok=(m.pre||[]).every(p=>getSt(s,p)>=2);
-        const uebung=st===1?'Aktiv geübt':st>=2?'Validiert':'—';
-        return`<tr><td><div style="font-size:12px;font-weight:500;">${m.id}</div><div style="font-size:10px;color:var(--gray-m);">${m.title}</div></td>
-        <td>${stPill(st)}</td>
-        <td style="font-size:11px;color:var(--gray-m);">${uebung}</td>
-        <td style="font-size:11px;">${!(m.pre||[]).length?'—':pok?'<span style="color:var(--green)">✓</span>':'<span style="color:var(--red)">⚠</span>'}</td></tr>`;
-      }).join('')}</tbody></table></div>`;
-  }
-}
-
-// ═══════════════════════════════════════════════════════
-// GENERATOR
-// ═══════════════════════════════════════════════════════
-let GS = {mode:'klasse',lang:'DE',niveau:1,space:'klein',selSt:new Set(STUDENTS.map(s=>s.id)),selMs:new Set(['MS3.4'])};
-
-function renderGenerator(){
-  document.getElementById('t-content').style.padding='0';
-  document.getElementById('t-content').innerHTML=`
-    <div class="gen-layout" style="height:calc(100vh - 104px);">
-      <div class="gen-panel" id="gen-panel">
-
-        <div class="gen-section">
-          <div class="gen-section-title">Modus</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--gray-l);padding:4px;border-radius:var(--rs);">
-            <button class="tog-btn on" id="gmod-klasse" onclick="gSetMode('klasse')" style="background:#fff;color:var(--teal);border-color:var(--teal);">Klassenblatt</button>
-            <button class="tog-btn" id="gmod-individuell" onclick="gSetMode('individuell')">Individuell</button>
-          </div>
-        </div>
-
-        <div class="gen-section">
-          <div class="gen-section-title">Einstellungen</div>
-          <div class="field">
-            <label>Sprache</label>
-            <div class="toggle-row cols-3">
-              <button class="tog-btn on" id="glang-DE" onclick="gSetLang('DE')">Deutsch</button>
-              <button class="tog-btn" id="glang-EN" onclick="gSetLang('EN')">English</button>
-              <button class="tog-btn" id="glang-bilingual" onclick="gSetLang('bilingual')">Bilingual</button>
-            </div>
-          </div>
-          <div class="field">
-            <label>Datum</label>
-            <input type="date" class="inp" id="g-datum" value="${new Date().toISOString().split('T')[0]}">
-          </div>
-        </div>
-
-        <div class="gen-section" id="g-sec-st" style="display:none;">
-          <div class="gen-section-title">Schüler auswählen</div>
-          <div style="display:flex;flex-wrap:wrap;gap:5px;" id="g-st-grid">
-            ${STUDENTS.map(s=>`<div class="s-chip on" id="gchip-${s.id}" onclick="gToggleSt('${s.id}')">
-              <div class="av" style="background:${s.color}">${s.av}</div>${s.name.split(' ')[0]}</div>`).join('')}
-          </div>
-          <div style="display:flex;gap:6px;margin-top:8px;">
-            <button class="btn btn-ghost btn-sm" onclick="gSelAll()">Alle</button>
-            <button class="btn btn-ghost btn-sm" onclick="gSelNone()">Keine</button>
-            <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="gSelGaps()">Nur Lücken</button>
-          </div>
-        </div>
-
-        <div class="gen-section">
-          <div class="gen-section-title">Milestones</div>
-          <div id="g-ms-grid" style="display:flex;flex-wrap:wrap;gap:4px;">
-            ${MS.map(m=>`<div class="ms-chip ${GS.selMs.has(m.id)?'on':''}" id="gms-${m.id}" onclick="gToggleMs('${m.id}')">${m.id}</div>`).join('')}
-          </div>
-          <div style="display:flex;gap:6px;margin-top:8px;">
-            <button class="btn btn-ghost btn-sm" style="color:var(--teal);" onclick="gAutoMs()">KI-Empfehlung</button>
-            <button class="btn btn-ghost btn-sm" onclick="gClearMs()">Reset</button>
-          </div>
-        </div>
-
-        <div class="gen-section">
-          <div class="gen-section-title">Aufgaben</div>
-          <div class="field">
-            <label>Anzahl <span id="g-anz-val">4</span></label>
-            <input type="range" min="2" max="8" value="4" id="g-anz" style="width:100%;" oninput="document.getElementById('g-anz-val').textContent=this.value">
-          </div>
-          <div class="field">
-            <label>Niveau</label>
-            <div class="toggle-row cols-4">
-              <button class="tog-btn on" id="gniv-1" onclick="gSetNiv(1)">★</button>
-              <button class="tog-btn" id="gniv-2" onclick="gSetNiv(2)">★★</button>
-              <button class="tog-btn" id="gniv-3" onclick="gSetNiv(3)">★★★</button>
-              <button class="tog-btn" id="gniv-mix" onclick="gSetNiv('mix')">Mix</button>
-            </div>
-          </div>
-          <div class="field">
-            <label>Kontext / Thema</label>
-            <textarea class="ta" id="g-ctx" placeholder="z.B. Fussball, Bauernhof, Zürich…"></textarea>
-          </div>
-          <div class="field">
-            <label>Schreibraum</label>
-            <div class="toggle-row cols-3">
-              <button class="tog-btn on" id="gspc-klein" onclick="gSetSpc('klein')">Klein</button>
-              <button class="tog-btn" id="gspc-mittel" onclick="gSetSpc('mittel')">Mittel</button>
-              <button class="tog-btn" id="gspc-gross" onclick="gSetSpc('gross')">Gross</button>
-            </div>
-          </div>
-        </div>
-
-        <button class="big-btn teal" id="g-gen-btn" onclick="gGenerate()">✦ Aufgabenblätter generieren</button>
-        <button class="big-btn ghost" style="margin-top:6px;" onclick="gDemo()">Demo (ohne API)</button>
+function renderGen(){
+  const c=document.getElementById('t-content');
+  c.innerHTML=`
+    <div style="display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 104px);overflow:hidden;">
+      <div style="border-right:1px solid var(--border);overflow-y:auto;padding:16px;background:#fff;">
+        <div style="font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Milestones</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">${MS.map(m=>`<div style="padding:3px 8px;border-radius:20px;font-size:10px;font-weight:500;cursor:pointer;border:1.5px solid ${GS.selMs.has(m.id)?'var(--purple)':'var(--border)'};background:${GS.selMs.has(m.id)?'var(--purple-l)':'#fff'};color:${GS.selMs.has(m.id)?'var(--purple)':'var(--gray-m)'};" id="gms-${m.id}" onclick="gtMs('${m.id}')">${m.id}</div>`).join('')}</div>
+        <div style="font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Sprache</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:12px;">${['DE','EN','bilingual'].map(l=>`<button style="padding:5px;border:1.5px solid ${GS.lang===l?'var(--teal)':'var(--border)'};border-radius:5px;font-size:10px;cursor:pointer;background:${GS.lang===l?'var(--teal-l)':'#fff'};color:${GS.lang===l?'var(--teal)':'var(--gray-m)'};" id="gl-${l}" onclick="gSL('${l}')">${l}</button>`).join('')}</div>
+        <div style="font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Niveau</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-bottom:12px;">${[[1,'★'],[2,'★★'],[3,'★★★'],['mix','Mix']].map(([n,l])=>`<button style="padding:5px;border:1.5px solid ${GS.niveau===n?'var(--teal)':'var(--border)'};border-radius:5px;font-size:10px;cursor:pointer;background:${GS.niveau===n?'var(--teal-l)':'#fff'};color:${GS.niveau===n?'var(--teal)':'var(--gray-m)'};" id="gn-${n}" onclick="gSN(${typeof n==='number'?n:`'${n}'`})">${l}</button>`).join('')}</div>
+        <div style="font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Anzahl <span id="ganz">4</span></div>
+        <input type="range" min="2" max="8" value="4" id="g-anz" style="width:100%;margin-bottom:12px;" oninput="document.getElementById('ganz').textContent=this.value">
+        <div style="font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Kontext</div>
+        <textarea style="width:100%;border:1.5px solid var(--border);border-radius:var(--rs);padding:7px;font-size:12px;font-family:var(--sans);resize:vertical;min-height:48px;outline:none;" id="g-ctx" placeholder="z.B. Fussball…"></textarea>
+        <button class="btn btn-teal" style="width:100%;justify-content:center;margin-top:12px;font-size:12px;" id="g-btn" onclick="gGen()">✦ Generieren</button>
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:5px;font-size:12px;" onclick="gDemo()">Demo</button>
       </div>
-
-      <div class="gen-preview" id="g-preview">
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--gray-m);text-align:center;gap:10px;">
-          <div style="font-size:48px;">📄</div>
-          <div style="font-family:var(--serif);font-size:20px;color:var(--gray);">Bereit zum Generieren</div>
-          <div style="font-size:13px;max-width:260px;line-height:1.6;">Wähle Milestones, stelle Niveau und Sprache ein, klicke auf Generieren.</div>
+      <div style="overflow-y:auto;padding:18px;" id="g-prev">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--gray-m);text-align:center;gap:8px;">
+          <div style="font-size:40px;">📄</div>
+          <div style="font-family:var(--serif);font-size:18px;color:var(--gray);">Bereit</div>
         </div>
       </div>
     </div>`;
 }
 
-function gSetMode(m){GS.mode=m;document.getElementById('gmod-klasse').classList.toggle('on',m==='klasse');document.getElementById('gmod-individuell').classList.toggle('on',m==='individuell');document.getElementById('g-sec-st').style.display=m==='individuell'?'block':'none';}
-function gSetLang(l){GS.lang=l;['DE','EN','bilingual'].forEach(x=>{const el=document.getElementById('glang-'+x);if(el)el.classList.toggle('on',x===l);});}
-function gSetNiv(n){GS.niveau=n;[1,2,3,'mix'].forEach(x=>{const el=document.getElementById('gniv-'+x);if(el)el.classList.toggle('on',x===n);});}
-function gSetSpc(s){GS.space=s;['klein','mittel','gross'].forEach(x=>{const el=document.getElementById('gspc-'+x);if(el)el.classList.toggle('on',x===s);});}
-function gToggleSt(id){GS.selSt.has(id)?GS.selSt.delete(id):GS.selSt.add(id);document.getElementById('gchip-'+id).classList.toggle('on',GS.selSt.has(id));}
-function gSelAll(){STUDENTS.forEach(s=>{GS.selSt.add(s.id);document.getElementById('gchip-'+s.id).classList.add('on');});}
-function gSelNone(){STUDENTS.forEach(s=>{GS.selSt.delete(s.id);document.getElementById('gchip-'+s.id).classList.remove('on');});}
-function gSelGaps(){gSelNone();STUDENTS.filter(s=>MS.some(m=>getSt(getSD(s),m.id)===-1)).forEach(s=>{GS.selSt.add(s.id);document.getElementById('gchip-'+s.id).classList.add('on');});}
-function gToggleMs(id){GS.selMs.has(id)?GS.selMs.delete(id):GS.selMs.add(id);document.getElementById('gms-'+id).classList.toggle('on',GS.selMs.has(id));}
-function gAutoMs(){GS.selMs.clear();document.querySelectorAll('.ms-chip').forEach(el=>el.classList.remove('on'));MS.forEach(m=>{const k=mk(m.id);const rel=STUDENTS.filter(s=>[1,-1].includes(s.ms[k]||0)).length;if(rel>=3){GS.selMs.add(m.id);const el=document.getElementById('gms-'+m.id);if(el)el.classList.add('on');}});if(GS.selMs.size===0)gToggleMs('MS3.4');}
-function gClearMs(){GS.selMs.clear();document.querySelectorAll('.ms-chip').forEach(el=>el.classList.remove('on'));}
+function gtMs(id){GS.selMs.has(id)?GS.selMs.delete(id):GS.selMs.add(id);const e=document.getElementById('gms-'+id);if(e){e.style.borderColor=GS.selMs.has(id)?'var(--purple)':'var(--border)';e.style.background=GS.selMs.has(id)?'var(--purple-l)':'#fff';e.style.color=GS.selMs.has(id)?'var(--purple)':'var(--gray-m)';}}
+function gSL(l){GS.lang=l;['DE','EN','bilingual'].forEach(x=>{const e=document.getElementById('gl-'+x);if(e){e.style.borderColor=x===l?'var(--teal)':'var(--border)';e.style.background=x===l?'var(--teal-l)':'#fff';e.style.color=x===l?'var(--teal)':'var(--gray-m)';}});}
+function gSN(n){GS.niveau=n;[1,2,3,'mix'].forEach(x=>{const e=document.getElementById('gn-'+x);if(e){e.style.borderColor=x===n?'var(--teal)':'var(--border)';e.style.background=x===n?'var(--teal-l)':'#fff';e.style.color=x===n?'var(--teal)':'var(--gray-m)';}});}
 
-async function gGenerate(){
-  if(!GS.selMs.size){alert('Bitte mindestens einen Milestone wählen.');return;}
-  const btn=document.getElementById('g-gen-btn');
-  btn.className='big-btn disabled';btn.innerHTML='<div class="spinner"></div> Generiere…';
+async function gGen(){
+  if(!GS.selMs.size){alert('Mind. einen Milestone wählen.');return;}
+  const btn=document.getElementById('g-btn');btn.innerHTML='<div class="spinner"></div>';btn.disabled=true;
   const msList=MS.filter(m=>GS.selMs.has(m.id));
-  const students=GS.mode==='individuell'?STUDENTS.filter(s=>GS.selSt.has(s.id)):[null];
-  const anzahl=parseInt(document.getElementById('g-anz').value)||4;
+  const anz=parseInt(document.getElementById('g-anz').value)||4;
   const ctx=document.getElementById('g-ctx').value.trim();
-  const datum=document.getElementById('g-datum').value;
-  document.getElementById('g-preview').innerHTML='<div class="loadbar"></div><div style="text-align:center;padding:40px;color:var(--gray-m);">✦ Claude generiert…</div>';
+  document.getElementById('g-prev').innerHTML='<div class="loadbar"></div><div style="text-align:center;padding:30px;color:var(--gray-m);">✦ Claude generiert…</div>';
   try{
-    const sheets=[];
-    for(const st of students)sheets.push(await gGenSheet(st,msList,anzahl,ctx,datum));
-    gRenderSheets(sheets,datum);
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:`Expert primary math teacher. Create ${anz} tasks. Language: ${GS.lang==='EN'?'English':GS.lang==='bilingual'?'bilingual DE/EN':'Deutsch'}. Milestones: ${msList.map(m=>m.id+' "'+m.title+'"').join(', ')}. Niveau: ${'★'.repeat(typeof GS.niveau==='number'?GS.niveau:2)}. ${ctx?'Theme: "'+ctx+'"':'Use varied grade 5/6 contexts.'} Respond ONLY JSON: {"tasks":[{"milestone_id":"","context":"","question":"","solution":"","bloom":"","niveau":1}]}`}]})});
+    const d=await r.json();
+    const raw=d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
+    gRender(JSON.parse(raw).tasks);
   }catch(e){gDemo();}
-  btn.className='big-btn teal';btn.innerHTML='✦ Aufgabenblätter generieren';
-}
-
-async function gGenSheet(student,msList,anzahl,ctx,datum){
-  const isEN=student?student.lang==='EN':GS.lang==='EN';
-  const isBi=student?student.lang==='bilingual':GS.lang==='bilingual';
-  const langLabel=isBi?'bilingual (German and English mixed naturally)':isEN?'English':'Deutsch';
-  let niveauNote=`Niveau: ${'★'.repeat(typeof GS.niveau==='number'?GS.niveau:2)} ${GS.niveau==='mix'?'(mixed levels)':''}`;
-  if(student){
-    const gaps=msList.filter(m=>getSt(student,m.id)===-1);
-    if(gaps.length>0)niveauNote=`REMEDIAL: gaps in ${gaps.map(m=>m.id).join(',')}. Rebuild from scratch.`;
-    else if(msList.every(m=>getSt(student,m.id)>=2))niveauNote=`ADVANCED: push to ★★★.`;
-  }
-  const prompt=`You are an expert primary school math teacher at SIS Swiss International School (bilingual, LP21, grade 5/6).
-Create EXACTLY ${anzahl} math tasks for a worksheet.
-${student?`Student: ${student.name} (${student.lang})`:'CLASS worksheet.'}
-Language: ${langLabel}
-Milestones: ${msList.map(m=>`${m.id} "${m.title}" (Bloom: ${m.bloom})`).join(', ')}
-${niveauNote}
-${ctx?`Theme: "${ctx}"`:'Use varied age-appropriate real-world contexts.'}
-Respond ONLY with JSON (no markdown):
-{"tasks":[{"milestone_id":"MS3.4","context":"1-sentence scenario","question":"the question","solution":"answer","bloom":"Anwenden","niveau":1}]}`;
-  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:prompt}]})});
-  const d=await r.json();
-  const raw=d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
-  return{student,tasks:JSON.parse(raw).tasks,datum};
+  btn.innerHTML='✦ Generieren';btn.disabled=false;
 }
 
 function gDemo(){
-  const btn=document.getElementById('g-gen-btn');
-  if(btn){btn.className='big-btn teal';btn.innerHTML='✦ Aufgabenblätter generieren';}
-  const datum=document.getElementById('g-datum')?.value||new Date().toISOString().split('T')[0];
-  const students=GS.mode==='individuell'?STUDENTS.filter(s=>GS.selSt.has(s.id)).slice(0,3):[null];
-  const demoDE=[
-    {milestone_id:"MS3.4",context:"Beim Mittagessen gibt es Pizza.",question:"Lena isst 2/8 der Pizza, ihr Bruder 3/8. Wie viel haben beide zusammen?",solution:"5/8",bloom:"Anwenden",niveau:1},
-    {milestone_id:"MS3.3",context:"Im Kunstunterricht malen die Kinder.",question:"Kürze den Bruch 6/8 so weit wie möglich.",solution:"3/4",bloom:"Anwenden",niveau:1},
-    {milestone_id:"MS1.2",context:"Am Schulfest werden 4'738 Lose verkauft.",question:"Runde 4'738 auf die nächste Hunderterzahl.",solution:"4'700",bloom:"Anwenden",niveau:1},
-    {milestone_id:"MS6.2",context:"Der Schulhof soll neu gestrichen werden.",question:"Ein Rechteck ist 24 m lang und 15 m breit. Wie gross ist die Fläche?",solution:"360 m²",bloom:"Anwenden",niveau:1},
-  ];
-  const demoEN=[
-    {milestone_id:"MS3.4",context:"Pizza day at school!",question:"Max eats 3/8 of the pizza, Sara eats 2/8. How much in total?",solution:"5/8",bloom:"Anwenden",niveau:1},
-    {milestone_id:"MS3.2",context:"Comparing reading progress.",question:"Order from smallest to largest: 3/4, 1/2, 2/3",solution:"1/2, 2/3, 3/4",bloom:"Anwenden",niveau:1},
-    {milestone_id:"MS4.2",context:"Pencils cost CHF 1.35 each.",question:"How much do 4 pencils cost?",solution:"CHF 5.40",bloom:"Anwenden",niveau:1},
-    {milestone_id:"MS6.1",context:"The garden needs a new fence.",question:"A garden is 12 m long and 8 m wide. What is the perimeter?",solution:"40 m",bloom:"Anwenden",niveau:1},
-  ];
+  const btn=document.getElementById('g-btn');if(btn){btn.innerHTML='✦ Generieren';btn.disabled=false;}
   const anz=parseInt(document.getElementById('g-anz')?.value||4);
-  const sheets=students.map(st=>({student:st,tasks:(st?.lang==='EN'?demoEN:demoDE).slice(0,anz),datum,isDemo:true}));
-  gRenderSheets(sheets,datum);
+  gRender([
+    {milestone_id:'MS3.4',context:'Beim Mittagessen gibt es Pizza.',question:'Lena isst 2/8, ihr Bruder 3/8. Wie viel zusammen?',solution:'5/8',bloom:'Anwenden',niveau:1},
+    {milestone_id:'MS3.3',context:'Im Kunstunterricht.',question:'Kürze 6/8 so weit wie möglich.',solution:'3/4',bloom:'Anwenden',niveau:1},
+    {milestone_id:'MS1.2',context:'Am Schulfest: 4\'738 Lose.',question:'Runde auf die nächste Hunderterzahl.',solution:'4\'700',bloom:'Anwenden',niveau:1},
+    {milestone_id:'MS6.2',context:'Der Schulhof wird neu gestrichen.',question:'24m × 15m. Wie gross ist die Fläche?',solution:'360 m²',bloom:'Anwenden',niveau:1},
+  ].slice(0,anz),true);
 }
 
-function gSpaceH(){return{klein:'44px',mittel:'72px',gross:'100px'}[GS.space]||'44px';}
-
-function gRenderSheets(sheets,datum){
-  const dateStr=datum?new Date(datum).toLocaleDateString('de-CH',{day:'2-digit',month:'long',year:'numeric'}):'';
-  const prev=document.getElementById('g-preview');
-  prev.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <div><div style="font-family:var(--serif);font-size:17px;">${sheets.length} Aufgabenblatt${sheets.length>1?'er':''}</div>
-      <div style="font-size:11px;color:var(--gray-m);">${dateStr}</div></div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-ghost btn-sm" onclick="window.print()">Drucken</button>
-        <button class="btn btn-teal btn-sm" onclick="window.print()">PDF Export</button>
-      </div>
+function gRender(tasks,isDemo=false){
+  const datum=new Date().toLocaleDateString('de-CH',{day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('g-prev').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-family:var(--serif);font-size:16px;">${tasks.length} Aufgaben · ${datum}</div>
+      <button class="btn btn-teal btn-sm" onclick="window.print()">🖨 Drucken</button>
     </div>
-    <div id="ws-stack"></div>`;
-  const stack=document.getElementById('ws-stack');
-  sheets.forEach((sheet,idx)=>{
-    const s=sheet.student;
-    const isEN=s?s.lang==='EN':GS.lang==='EN';
-    const isBi=s?s.lang==='bilingual':GS.lang==='bilingual';
-    const msIds=[...new Set(sheet.tasks.map(t=>t.milestone_id))];
-    const el=document.createElement('div');
-    el.className='ws fade-up';
-    el.style.animationDelay=(idx*.08)+'s';
-    el.innerHTML=`
-      <div class="ws-inner">
-        ${sheet.isDemo?`<div style="background:var(--amber-l);border:1px solid #FAC775;border-radius:var(--rs);padding:7px 11px;margin-bottom:12px;font-size:11px;color:var(--amber);">Demo · Mit API-Key generiert Claude individuell für jeden Schüler.</div>`:''}
-        <div class="ws-head">
-          <div>
-            <div class="ws-school">SIS Swiss International School</div>
-            <div class="ws-title">Mathematik${isEN?' / Mathematics':''} · 5b</div>
-            <div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap;">
-              ${msIds.map(id=>`<span style="font-size:9px;background:var(--purple-l);color:var(--purple);padding:1px 6px;border-radius:10px;font-family:var(--mono);">${id}</span>`).join('')}
-            </div>
-          </div>
-          <div>
-            <div class="ws-name">${s?s.name:'Klasse 5b'}</div>
-            <div class="ws-date">${dateStr}</div>
-            <div style="font-size:10px;color:var(--gray-m);margin-top:3px;">Unterschrift: ____________</div>
-          </div>
+    <div style="background:#fff;border-radius:var(--r);box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;">
+      <div style="padding:22px 26px;">
+        ${isDemo?`<div style="background:var(--amber-l);border:1px solid #FAC775;border-radius:var(--rs);padding:6px 10px;margin-bottom:10px;font-size:11px;color:var(--amber);">Demo-Aufgaben</div>`:''}
+        <div style="display:flex;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:2.5px solid var(--teal-d);">
+          <div><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);">Bili Learning</div>
+          <div style="font-family:var(--serif);font-size:17px;">Mathematik · Klasse 5/6</div></div>
+          <div style="text-align:right;"><div style="font-family:var(--serif);font-size:13px;">________________________</div>
+          <div style="font-size:10px;color:var(--gray-m);">${datum}</div></div>
         </div>
-        <div class="ws-infobar">
-          <span>📝 ${sheet.tasks.length} Aufgaben</span>
-          <span>⏱ ~${sheet.tasks.length*5} Min.</span>
-          <span>${isEN?'🇬🇧 EN':isBi?'🌐 Bi':'🇩🇪 DE'}</span>
-          ${s&&Object.values(s.ms||{}).some(v=>v===-1)?'<span style="color:var(--red)">⚠ Förderblatt</span>':''}
-        </div>
-        ${sheet.tasks.map((task,ti)=>`
-          <div class="task-item">
-            <div class="task-row">
-              <div class="task-num">${ti+1}</div>
-              <div style="flex:1;">
-                <div class="task-ctx">${task.context}</div>
-                <div class="task-q">${task.question}</div>
-                <div style="margin-top:5px;display:flex;gap:5px;">
-                  <span style="font-size:10px;font-weight:500;color:${bloomColor(task.bloom)}">${task.bloom}</span>
-                  <span style="font-size:10px;color:var(--amber);">${'★'.repeat(task.niveau||1)}</span>
-                </div>
-              </div>
-              <span class="task-ms">${task.milestone_id}</span>
+        ${tasks.map((t,i)=>`
+          <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+            <div style="display:flex;gap:7px;margin-bottom:5px;">
+              <div style="width:22px;height:22px;border-radius:50%;background:var(--teal-d);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;">${i+1}</div>
+              <div style="flex:1;"><div style="font-size:11px;color:var(--gray-m);font-style:italic;margin-bottom:2px;">${t.context}</div>
+              <div style="font-size:13px;font-weight:500;">${t.question}</div></div>
+              <span style="font-size:9px;font-family:var(--mono);color:var(--gray-m);background:var(--gray-l);padding:1px 4px;border-radius:3px;flex-shrink:0;">${t.milestone_id}</span>
             </div>
-            <div class="task-space" style="height:${gSpaceH()};"></div>
+            <div style="border:1px dashed var(--border);border-radius:5px;height:44px;background:var(--gray-ll);margin-top:6px;"></div>
           </div>`).join('')}
-        <div class="ws-foot">
-          <span>SIS AI Learning · ${dateStr}</span>
-          <span style="font-family:var(--mono);font-size:9px;opacity:.4;">${s?s.id:'cls'}-${Date.now().toString(36).slice(-4)}</span>
+        <div style="margin-top:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'flex':'none'">👁 Lösungen</button>
+          <div style="display:none;gap:8px;font-size:11px;align-items:center;flex-wrap:wrap;margin-top:4px;">${tasks.map((t,i)=>`<span><strong>${i+1}.</strong> ${t.solution}</span>`).join('')}</div>
         </div>
       </div>
-      <div class="ws-footer-bar">
-        <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 Drucken</button>
-        <button class="btn btn-ghost btn-sm" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'flex':'none'">👁 Lösung</button>
-        <div style="display:none;gap:8px;font-size:11px;align-items:center;margin-left:4px;flex-wrap:wrap;">
-          ${sheet.tasks.map((t,i)=>`<span><strong>${i+1}.</strong> ${t.solution}</span>`).join('')}
-        </div>
-        <button class="btn btn-teal btn-sm" style="margin-left:auto;" onclick="tNav('upload')">📤 Ergebnisse hochladen</button>
-      </div>`;
-    stack.appendChild(el);
-  });
+    </div>`;
 }
 
-// ═══════════════════════════════════════════════════════
-// UPLOAD & AUSWERTUNG
-// ═══════════════════════════════════════════════════════
-let uploadState={file:null,preview:null,analyzing:false,results:null};
+// ─── UPLOAD ─────────────────────────────────────────────
+let uploadFile=null;const mRes={};
 
 function renderUpload(){
-  document.getElementById('t-content').innerHTML=`
-    <div class="tabs">
-      <div class="tab active" id="utab-upload" onclick="setUTab('upload')">Upload</div>
-      <div class="tab" id="utab-manuell" onclick="setUTab('manuell')">Manuelle Eingabe</div>
-      <div class="tab" id="utab-history" onclick="setUTab('history')">Verlauf</div>
-    </div>
-    <div id="u-body"></div>`;
-  renderUploadTab();
-}
-
-function setUTab(tab){
-  ['upload','manuell','history'].forEach(t=>{document.getElementById('utab-'+t).classList.toggle('active',t===tab);});
-  if(tab==='upload')renderUploadTab();
-  else if(tab==='manuell')renderManuell();
-  else if(tab==='history')renderHistory();
-}
-
-function renderUploadTab(){
-  document.getElementById('u-body').innerHTML=`
+  const c=document.getElementById('t-content');
+  c.innerHTML=`
     <div class="g2">
       <div>
-        <div class="upload-zone" id="drop-zone"
-          ondragover="event.preventDefault();this.classList.add('drag')"
-          ondragleave="this.classList.remove('drag')"
-          ondrop="handleDrop(event)"
-          onclick="document.getElementById('file-inp').click()">
-          <input type="file" id="file-inp" accept="image/*,.pdf" style="display:none;" onchange="handleFile(this.files[0])">
-          <div class="upload-icon">📸</div>
-          <div class="upload-title">Ausgefülltes Aufgabenblatt hochladen</div>
-          <div class="upload-sub" style="margin-top:6px;">Foto oder Scan · JPG, PNG, PDF<br>Drag & Drop oder klicken</div>
-        </div>
-
-        <div id="upload-preview" style="margin-top:14px;display:none;">
-          <div class="card">
-            <div class="card-title">Hochgeladenes Bild</div>
-            <img id="prev-img" style="width:100%;border-radius:var(--rs);border:1px solid var(--border);" alt="Vorschau">
-            <div style="margin-top:12px;display:flex;gap:8px;">
-              <button class="btn btn-teal" onclick="analyzeUpload()">✦ Mit KI auswerten</button>
-              <button class="btn btn-ghost" onclick="resetUpload()">Neues Bild</button>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title">Foto hochladen</div>
+          <div style="border:2px dashed var(--border);border-radius:var(--r);padding:24px;text-align:center;cursor:pointer;transition:all .2s;" onclick="document.getElementById('upl-inp').click()" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='var(--border)'">
+            <input type="file" id="upl-inp" accept="image/*" style="display:none;" onchange="handleUpl(this.files[0])">
+            <div style="font-size:28px;margin-bottom:6px;">📸</div>
+            <div style="font-weight:500;color:var(--teal);">Ausgefülltes Blatt hochladen</div>
+            <div style="font-size:12px;color:var(--gray-m);margin-top:4px;">JPG · PNG · Foto</div>
+          </div>
+          <div id="upl-prev" style="display:none;margin-top:10px;">
+            <img id="upl-img" style="width:100%;border-radius:var(--rs);border:1px solid var(--border);">
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button class="btn btn-teal btn-sm" onclick="analyzeUpl()">✦ Mit KI auswerten</button>
+              <button class="btn btn-ghost btn-sm" onclick="uploadFile=null;document.getElementById('upl-prev').style.display='none'">Reset</button>
             </div>
           </div>
         </div>
-
-        <div class="card" style="margin-top:14px;">
-          <div class="card-title">Wie funktioniert der Upload?</div>
-          <div style="font-size:12px;color:var(--gray-m);line-height:1.8;">
-            <div>1. Aufgabenblatt ausfüllen lassen (analog)</div>
-            <div>2. Blatt fotografieren oder einscannen</div>
-            <div>3. Foto hochladen → Claude liest Antworten</div>
-            <div>4. KI schlägt Milestone-Update vor</div>
-            <div>5. Lehrperson bestätigt oder korrigiert</div>
-            <div style="margin-top:8px;padding:8px;background:var(--amber-l);border-radius:6px;color:var(--amber);">
-              ⚠ Nur die Lehrperson kann Milestones auf "Erreicht" setzen. Die KI macht Vorschläge.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div id="analysis-panel">
-        <div class="card" style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--gray-m);text-align:center;min-height:300px;">
-          <div style="font-size:40px;">🔍</div>
-          <div style="font-family:var(--serif);font-size:18px;color:var(--gray);">Auswertung</div>
-          <div style="font-size:12px;max-width:220px;line-height:1.6;">Lade ein Foto hoch und klicke auf "Mit KI auswerten".</div>
-        </div>
-      </div>
-    </div>`;
-}
-
-function handleDrop(e){
-  e.preventDefault();
-  document.getElementById('drop-zone').classList.remove('drag');
-  const file=e.dataTransfer.files[0];
-  if(file)handleFile(file);
-}
-
-function handleFile(file){
-  if(!file)return;
-  uploadState.file=file;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    uploadState.preview=e.target.result;
-    document.getElementById('prev-img').src=e.target.result;
-    document.getElementById('upload-preview').style.display='block';
-    document.getElementById('drop-zone').style.display='none';
-  };
-  reader.readAsDataURL(file);
-}
-
-function resetUpload(){
-  uploadState={file:null,preview:null,analyzing:false,results:null};
-  document.getElementById('drop-zone').style.display='block';
-  document.getElementById('upload-preview').style.display='none';
-  document.getElementById('analysis-panel').innerHTML=`<div class="card" style="min-height:300px;display:flex;align-items:center;justify-content:center;color:var(--gray-m);font-size:13px;">Auswertung erscheint hier.</div>`;
-}
-
-async function analyzeUpload(){
-  const panel=document.getElementById('analysis-panel');
-  panel.innerHTML=`<div class="card"><div class="loadbar"></div><div style="text-align:center;padding:30px;color:var(--gray-m);">✦ Claude liest das Aufgabenblatt…<br><small style="margin-top:6px;display:block;">Erkennt Antworten · Ordnet Milestones zu · Schlägt Updates vor</small></div></div>`;
-
-  try{
-    const base64=uploadState.preview.split(',')[1];
-    const mtype=uploadState.file.type||'image/jpeg';
-    const prompt=`You are analyzing a student's completed math worksheet from SIS Swiss International School (grade 5/6, LP21 curriculum).
-
-Look at the image and identify:
-1. Which student's worksheet is this? (look for a name at top right)
-2. Which tasks can you see and what answers did the student write?
-3. For each task, determine if the answer is CORRECT or INCORRECT
-4. Map each task to its milestone (look for milestone codes like MS3.4 in the top right of each task)
-
-Known milestones: ${MS.map(m=>`${m.id}=${m.title}`).join(', ')}
-
-Respond ONLY with JSON:
-{
-  "student_name": "name or null if unclear",
-  "date": "date if visible",
-  "worksheet_code": "code at bottom right if visible",
-  "tasks": [
-    {
-      "task_number": 1,
-      "milestone_id": "MS3.4",
-      "student_answer": "what student wrote",
-      "correct_answer": "what correct answer should be",
-      "is_correct": true,
-      "confidence": "high/medium/low",
-      "notes": "any relevant observations"
-    }
-  ],
-  "overall_impression": "brief 1-sentence assessment",
-  "suggested_ms_updates": [
-    {"milestone_id": "MS3.4", "suggested_status": 1, "reason": "why"}
-  ]
-}`;
-
-    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-      model:"claude-sonnet-4-20250514",max_tokens:1500,
-      messages:[{role:"user",content:[
-        {type:"image",source:{type:"base64",media_type:mtype,data:base64}},
-        {type:"text",text:prompt}
-      ]}]
-    })});
-    const data=await resp.json();
-    const raw=data.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
-    const result=JSON.parse(raw);
-    uploadState.results=result;
-    renderAnalysis(result);
-  }catch(e){
-    renderDemoAnalysis();
-  }
-}
-
-function renderDemoAnalysis(){
-  const demoResult={
-    student_name:"Noah Fischer",
-    date:new Date().toLocaleDateString('de-CH'),
-    tasks:[
-      {task_number:1,milestone_id:"MS3.4",student_answer:"5/8",correct_answer:"5/8",is_correct:true,confidence:"high",notes:"Klar und sauber geschrieben"},
-      {task_number:2,milestone_id:"MS3.3",student_answer:"3/4",correct_answer:"3/4",is_correct:true,confidence:"high",notes:"Richtig"},
-      {task_number:3,milestone_id:"MS1.2",student_answer:"4'800",correct_answer:"4'700",is_correct:false,confidence:"high",notes:"Schüler hat aufgerundet statt abgerundet"},
-      {task_number:4,milestone_id:"MS6.2",student_answer:"360 m²",correct_answer:"360 m²",is_correct:true,confidence:"medium",notes:"Richtige Einheit verwendet"},
-    ],
-    overall_impression:"Noah zeigt gutes Verständnis für Brüche, hat aber Schwierigkeiten beim Runden.",
-    suggested_ms_updates:[
-      {milestone_id:"MS3.4",suggested_status:1,reason:"1 Aufgabe gelöst, braucht mehr Übung für Bestätigung"},
-      {milestone_id:"MS3.3",suggested_status:1,reason:"Korrekt, aber noch nicht bereit für Validierung"},
-      {milestone_id:"MS1.2",suggested_status:-1,reason:"Fehler beim Runden — Lücke"},
-      {milestone_id:"MS6.2",suggested_status:1,reason:"Korrekt mit richtiger Einheit"},
-    ],
-    isDemo:true
-  };
-  uploadState.results=demoResult;
-  renderAnalysis(demoResult);
-}
-
-function renderAnalysis(result){
-  const student=STUDENTS.find(s=>s.name===result.student_name)||STUDENTS[1];
-  const sd=getSD(student);
-  const panel=document.getElementById('analysis-panel');
-  const correct=result.tasks.filter(t=>t.is_correct).length;
-  const total=result.tasks.length;
-
-  panel.innerHTML=`
-    <div class="result-card fade-up">
-      <div class="result-head">
-        <div class="result-av" style="background:${student?.color||'#534AB7'}">${student?.av||'?'}</div>
-        <div style="flex:1;">
-          <div style="font-weight:600;">${result.student_name||'Schüler nicht erkannt'}</div>
-          <div style="font-size:11px;color:var(--gray-m);">${result.date||''} · ${correct}/${total} richtig</div>
-          ${result.isDemo?'<span class="pill pill-amber" style="font-size:10px;">Demo-Auswertung</span>':''}
-        </div>
-        <div style="font-size:24px;font-weight:700;color:${correct/total>=0.75?'var(--green)':correct/total>=0.5?'var(--amber)':'var(--red)'};">${Math.round(correct/total*100)}%</div>
-      </div>
-      <div class="result-body">
-        <div style="font-size:12px;color:var(--gray-m);font-style:italic;margin-bottom:12px;">"${result.overall_impression}"</div>
-
-        <div class="card-title">Aufgaben-Auswertung</div>
-        ${result.tasks.map(t=>`
-          <div class="ms-result-row">
-            <div style="width:24px;height:24px;border-radius:50%;background:${t.is_correct?'var(--green-l)':'var(--red-l)'};color:${t.is_correct?'var(--green)':'var(--red)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">${t.task_number}</div>
-            <div style="flex:1;">
-              <div style="font-size:11px;font-weight:500;">${t.milestone_id}</div>
-              <div style="font-size:10px;color:var(--gray-m);">${t.notes}</div>
-            </div>
-            <div style="font-size:11px;text-align:right;">
-              <div style="color:var(--gray-m);">Schüler: <strong>${t.student_answer}</strong></div>
-              ${!t.is_correct?`<div style="color:var(--red);">Richtig: ${t.correct_answer}</div>`:''}
-            </div>
-            <span class="pill ${t.is_correct?'pill-green':'pill-red'}" style="flex-shrink:0;">${t.is_correct?'✓':'✗'}</span>
-          </div>`).join('')}
-
-        <div style="margin-top:16px;">
-          <div class="card-title">KI-Vorschlag: Milestone-Updates</div>
-          <div style="font-size:11px;color:var(--amber);margin-bottom:8px;">⚠ Nur Vorschläge — Lehrperson muss bestätigen</div>
-          ${result.suggested_ms_updates.map(u=>{
-            const curSt=getSt(sd,u.milestone_id);
-            return`<div class="ms-result-row">
-              <span style="font-family:var(--mono);font-size:11px;background:var(--gray-l);padding:2px 6px;border-radius:4px;">${u.milestone_id}</span>
-              <div style="flex:1;font-size:11px;color:var(--gray-m);">${u.reason}</div>
-              <div style="display:flex;align-items:center;gap:6px;">
-                ${stPill(curSt)}<span style="font-size:12px;color:var(--gray-m);">→</span>${stPill(u.suggested_status)}
+        <div class="card">
+          <div class="card-title">Manuelle Eingabe</div>
+          <div class="field"><label>Schüler E-Mail</label><input class="inp" id="m-email" placeholder="anna@bili.ch"></div>
+          <div class="field"><label>Note (1–6)</label><input class="inp" type="number" id="m-note" min="1" max="6" step="0.5" placeholder="4.5"></div>
+          ${MS.slice(0,6).map(m=>`
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;font-size:12px;">
+              <code style="font-size:9px;background:var(--gray-l);padding:1px 4px;border-radius:3px;width:44px;flex-shrink:0;">${m.id}</code>
+              <span style="flex:1;color:var(--gray-m);font-size:11px;">${m.title}</span>
+              <div style="display:flex;gap:3px;">
+                ${['na','ok','no'].map(v=>`<button style="padding:2px 7px;border:1.5px solid var(--border);border-radius:4px;font-size:11px;cursor:pointer;background:#fff;" id="mr-${m.id}-${v}" onclick="setMR('${m.id}','${v}')">${v==='na'?'—':v==='ok'?'✓':'✗'}</button>`).join('')}
               </div>
-            </div>`;
-          }).join('')}
+            </div>`).join('')}
+          <div id="m-res" style="margin-top:8px;"></div>
+          <button class="btn btn-teal btn-sm" style="margin-top:4px;" onclick="saveManuell()">Speichern</button>
         </div>
-
-        <div style="margin-top:16px;display:flex;gap:8px;">
-          <button class="btn btn-teal" onclick="applyUpdates(${JSON.stringify(result.suggested_ms_updates).replace(/"/g,'&quot;')},'${student?.id}')">✓ Updates übernehmen</button>
-          <button class="btn btn-ghost" onclick="resetUpload()">Neues Blatt</button>
-        </div>
+      </div>
+      <div id="anal-result" class="card" style="display:flex;align-items:center;justify-content:center;color:var(--gray-m);font-size:13px;text-align:center;min-height:300px;">
+        <div><div style="font-size:32px;margin-bottom:8px;">🔍</div>Auswertung erscheint hier</div>
       </div>
     </div>`;
 }
 
-function applyUpdates(updates, studentId){
-  if(!studentId)return;
-  const s=STUDENTS.find(x=>x.id===studentId);
-  if(!s)return;
-  const saved=JSON.parse(localStorage.getItem('sis_'+studentId)||'{}');
-  const ms=saved.ms||{};
-  updates.forEach(u=>{ms[mk(u.milestone_id)]=u.suggested_status;});
-  saved.ms=ms;
-  localStorage.setItem('sis_'+studentId,JSON.stringify(saved));
-  const panel=document.getElementById('analysis-panel');
-  panel.innerHTML+=`<div class="alert alert-green fade-up" style="margin-top:12px;">✓ ${updates.length} Milestone-Updates gespeichert für ${s.name}. <a href="#" onclick="tNavSt('${studentId}')" style="color:var(--green);font-weight:500;">Profil ansehen →</a></div>`;
+function handleUpl(f){if(!f)return;uploadFile=f;const r=new FileReader();r.onload=e=>{document.getElementById('upl-img').src=e.target.result;document.getElementById('upl-prev').style.display='block';};r.readAsDataURL(f);}
+function setMR(id,v){mRes[id]=v;['na','ok','no'].forEach(x=>{const e=document.getElementById('mr-'+id+'-'+x);if(e){e.style.borderColor=x===v?'var(--teal)':'var(--border)';e.style.background=x===v?'var(--teal-l)':'#fff';}});}
+
+async function analyzeUpl(){
+  const res=document.getElementById('anal-result');
+  res.innerHTML='<div class="loadbar"></div><div style="text-align:center;padding:20px;color:var(--gray-m);">✦ Claude liest das Blatt…</div>';
+  const r=new FileReader();
+  r.onload=async e=>{
+    const b64=e.target.result.split(',')[1];const mt=uploadFile.type||'image/jpeg';
+    try{
+      const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mt,data:b64}},{type:'text',text:`Analyze this math worksheet. For each task: milestone_id, student_answer, is_correct. Known milestones: ${MS.map(m=>m.id+':'+m.title).join(',')}. Respond ONLY JSON: {"student_name":"","tasks":[{"milestone_id":"","student_answer":"","is_correct":true,"notes":""}],"overall_impression":""}`}]}]})});
+      const d=await resp.json();
+      const raw=d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
+      renderAnal(JSON.parse(raw));
+    }catch(e){renderAnal({student_name:'Demo',tasks:[{milestone_id:'MS3.4',student_answer:'5/8',is_correct:true,notes:'Korrekt'},{milestone_id:'MS1.2',student_answer:"4'800",is_correct:false,notes:'Falsch gerundet'}],overall_impression:'Brüche gut, Runden verbessern.',isDemo:true});}
+  };
+  r.readAsDataURL(uploadFile);
 }
 
-// Manuelle Eingabe
-function renderManuell(){
-  document.getElementById('u-body').innerHTML=`
+function renderAnal(res){
+  const cor=res.tasks.filter(t=>t.is_correct).length;
+  document.getElementById('anal-result').innerHTML=`<div class="fade-up" style="width:100%;">
+    ${res.isDemo?`<div class="alert alert-amber">Demo-Auswertung</div>`:''}
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <div style="flex:1;font-weight:600;">${res.student_name||'Schüler'}</div>
+      <div style="font-size:22px;font-weight:700;color:${cor/res.tasks.length>=.75?'var(--green)':'var(--coral)'};">${Math.round(cor/res.tasks.length*100)}%</div>
+    </div>
+    <div style="font-size:12px;color:var(--gray-m);font-style:italic;margin-bottom:10px;">"${res.overall_impression}"</div>
+    ${res.tasks.map(t=>`<div style="display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
+      <span>${t.is_correct?'✅':'❌'}</span>
+      <code style="font-size:10px;background:var(--gray-l);padding:1px 4px;border-radius:3px;">${t.milestone_id}</code>
+      <div style="flex:1;">Antwort: <strong>${t.student_answer}</strong><div style="font-size:10px;color:var(--gray-m);">${t.notes}</div></div>
+    </div>`).join('')}
+    <button class="btn btn-teal btn-sm" style="margin-top:10px;" onclick="alert('${DEMO?'Demo-Modus: nicht gespeichert.':'Gespeichert in Supabase!'}')">✓ Speichern</button>
+  </div>`;
+}
+
+async function saveManuell(){
+  const email=document.getElementById('m-email').value.trim();
+  const note=document.getElementById('m-note').value;
+  if(!email){alert('Bitte Schüler E-Mail eingeben.');return;}
+  const updates=Object.entries(mRes).filter(([,v])=>v!=='na');
+  if(!updates.length){alert('Mind. eine Aufgabe auswerten.');return;}
+  const res=document.getElementById('m-res');
+  if(!DEMO&&sb){
+    const{data:p}=await sb.from('profiles').select('id').eq('email',email).single();
+    if(!p){res.innerHTML='<div class="alert alert-red">Schüler nicht gefunden.</div>';return;}
+    for(const[msId,v]of updates){
+      await sb.from('schueler_milestones').upsert({schueler_id:p.id,milestone_id:msId,uebungs_status:v==='ok'?1:-1,updated_at:new Date().toISOString()});
+    }
+    res.innerHTML=`<div class="alert alert-green">${updates.length} Updates gespeichert. Note: ${note||'—'}</div>`;
+  }else{res.innerHTML=`<div class="alert alert-amber">${updates.length} Updates (Demo-Modus).</div>`;}
+}
+
+// ─── SETUP ──────────────────────────────────────────────
+function renderSetup(){
+  const c=document.getElementById('t-content');
+  c.innerHTML=`
     <div class="g2">
       <div class="card">
-        <div class="card-title">Schüler & Prüfung</div>
-        <div class="field"><label>Schüler</label>
-          <select class="sel" id="m-student">
-            ${STUDENTS.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}
-          </select>
-        </div>
-        <div class="field"><label>Gesamtnote (1–6)</label>
-          <input type="number" class="inp" id="m-note" min="1" max="6" step="0.5" placeholder="4.5">
-        </div>
-        <div class="field"><label>Datum</label>
-          <input type="date" class="inp" id="m-datum" value="${new Date().toISOString().split('T')[0]}">
-        </div>
-        <div class="card-title" style="margin-top:16px;">Aufgaben-Ergebnisse</div>
-        ${MS.slice(0,8).map(m=>`
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12px;">
-            <span style="font-family:var(--mono);font-size:11px;background:var(--gray-l);padding:2px 6px;border-radius:4px;width:56px;flex-shrink:0;">${m.id}</span>
-            <span style="flex:1;color:var(--gray-m);">${m.title}</span>
-            <div class="toggle-row cols-3" style="width:140px;">
-              <button class="tog-btn" id="mres-${m.id}-na" onclick="setMRes('${m.id}','na')">—</button>
-              <button class="tog-btn" id="mres-${m.id}-ok" onclick="setMRes('${m.id}','ok')">✓</button>
-              <button class="tog-btn" id="mres-${m.id}-no" onclick="setMRes('${m.id}','no')">✗</button>
-            </div>
-          </div>`).join('')}
-        <button class="btn btn-teal" style="margin-top:12px;" onclick="saveManuell()">Ergebnisse speichern</button>
+        <div class="card-title">Supabase Key konfigurieren</div>
+        <div class="alert alert-teal" style="margin-bottom:12px;">Publishable Key aus Supabase → Project Settings → API Keys</div>
+        <div class="field"><label>Publishable Key</label><input class="inp" type="password" id="sb-key-inp" placeholder="sb_publishable_..." value="${localStorage.getItem('sb_key')||''}"></div>
+        <button class="btn btn-teal" onclick="saveSBKey()">Speichern & neu laden</button>
       </div>
-      <div id="m-result-panel" class="card" style="display:flex;align-items:center;justify-content:center;color:var(--gray-m);font-size:13px;">
-        Ausgefüllte Ergebnisse erscheinen hier.
+      <div class="card">
+        <div class="card-title">Neuen Schüler anlegen</div>
+        <div class="g2">
+          <div class="field"><label>Vorname</label><input class="inp" id="ns-fn" placeholder="Anna"></div>
+          <div class="field"><label>Nachname</label><input class="inp" id="ns-ln" placeholder="Meier"></div>
+        </div>
+        <div class="field"><label>E-Mail</label><input class="inp" type="email" id="ns-email" placeholder="anna@schule.ch"></div>
+        <div class="field"><label>Passwort (temporär)</label><input class="inp" type="password" id="ns-pass" placeholder="Mindestens 8 Zeichen"></div>
+        <div class="field"><label>Sprache</label>
+          <select class="sel" id="ns-lang"><option value="DE">Deutsch</option><option value="EN">English</option><option value="bilingual">Bilingual</option></select>
+        </div>
+        <div id="ns-res" style="margin-bottom:8px;"></div>
+        <button class="btn btn-teal" onclick="createSchueler()">Schüler anlegen</button>
       </div>
     </div>`;
 }
 
-const mResults={};
-function setMRes(msId,val){
-  mResults[msId]=val;
-  ['na','ok','no'].forEach(v=>document.getElementById(`mres-${msId}-${v}`).classList.toggle('on',v===val));
+function saveSBKey(){
+  const key=document.getElementById('sb-key-inp').value.trim();
+  if(!key){alert('Key eingeben.');return;}
+  localStorage.setItem('sb_key',key);
+  location.reload();
 }
 
-function saveManuell(){
-  const sid=document.getElementById('m-student').value;
-  const note=document.getElementById('m-note').value;
-  const updates=[];
-  Object.entries(mResults).forEach(([msId,val])=>{
-    if(val==='ok')updates.push({milestone_id:msId,suggested_status:1,reason:`Aufgabe korrekt (Note: ${note})`});
-    if(val==='no')updates.push({milestone_id:msId,suggested_status:-1,reason:`Aufgabe falsch (Note: ${note})`});
-  });
-  if(!updates.length){alert('Bitte mindestens eine Aufgabe auswerten.');return;}
-  applyUpdates(updates,sid);
-  document.getElementById('m-result-panel').innerHTML=`<div class="alert alert-green">${updates.length} Updates gespeichert. <a href="#" onclick="tNavSt('${sid}')" style="color:var(--green);font-weight:500;">Profil ansehen →</a></div>`;
+async function createSchueler(){
+  const fn=document.getElementById('ns-fn').value.trim();
+  const ln=document.getElementById('ns-ln').value.trim();
+  const email=document.getElementById('ns-email').value.trim();
+  const pass=document.getElementById('ns-pass').value;
+  const lang=document.getElementById('ns-lang').value;
+  const res=document.getElementById('ns-res');
+  if(!fn||!ln||!email||!pass){res.innerHTML='<div class="alert alert-red">Alle Felder ausfüllen.</div>';return;}
+  if(pass.length<8){res.innerHTML='<div class="alert alert-red">Passwort mind. 8 Zeichen.</div>';return;}
+  res.innerHTML='<div class="loadbar"></div>';
+  if(!DEMO&&sb){
+    const{data,error}=await sb.auth.signUp({email,password:pass});
+    if(error){res.innerHTML=`<div class="alert alert-red">${error.message}</div>`;return;}
+    await sb.from('profiles').insert({id:data.user.id,vorname:fn,nachname:ln,email,rolle:'schueler',sprache:lang,aktiv:true,einwilligung:false});
+    res.innerHTML=`<div class="alert alert-green">✓ ${fn} ${ln} angelegt!<br>Login: ${email} · Passwort: (wie eingegeben)</div>`;
+  }else{res.innerHTML='<div class="alert alert-amber">Demo-Modus: nicht wirklich gespeichert.</div>';}
 }
 
-function renderHistory(){
-  document.getElementById('u-body').innerHTML=`
-    <div class="card">
-      <div class="card-title">Upload-Verlauf</div>
-      <div style="color:var(--gray-m);font-size:13px;padding:20px 0;text-align:center;">
-        Hier erscheinen alle hochgeladenen Blätter und Auswertungen.<br>
-        <span style="font-size:11px;">(Wird mit Datenbankanbindung gespeichert)</span>
-      </div>
-    </div>`;
-}
-
-// ═══════════════════════════════════════════════════════
-// STUDENT SHELL
-// ═══════════════════════════════════════════════════════
-let stView='ueben';
-let activeTaskMs=null;
-let selStudentTask=null;
+// ─── STUDENT ────────────────────────────────────────────
+let activeMs=null;
 
 function buildStudent(){
-  const s=CU.student;
+  document.getElementById('tb-page').textContent='Schüler';
+  const isEN=CU?.sprache==='EN';
   document.getElementById('app-body').innerHTML=`
     <div style="flex:1;overflow-y:auto;">
       <div class="student-hero">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-          <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;">${s.av}</div>
-          <div>
-            <div style="font-family:var(--serif);font-size:20px;">${s.lang==='EN'?'Hello':'Hallo'}, ${s.name.split(' ')[0]}!</div>
-            <div style="font-size:12px;opacity:.75;">Level ${lvl(s.xp)} · ${s.xp} XP · ${pct(s)}% erreicht</div>
-          </div>
+          <div style="width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;">${(CU?.vorname||'?')[0]}${(CU?.nachname||'')[0]||''}</div>
+          <div><div style="font-family:var(--serif);font-size:20px;">${isEN?'Hello':'Hallo'}, ${CU?.vorname}!</div>
+          <div style="font-size:12px;opacity:.75;">Bili Learning · ${DEMO?'Demo':'Supabase 🇨🇭'}</div></div>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.75;margin-bottom:4px;"><span>Fortschritt</span><span>${xpIn(s.xp)}/100 XP</span></div>
-        <div class="xp-wrap"><div class="xp-fill" style="width:${xpIn(s.xp)}%"></div></div>
+        <div class="xp-wrap"><div class="xp-fill" id="xp-bar" style="width:30%"></div></div>
       </div>
-      <div style="padding:18px 16px;max-width:640px;margin:0 auto;">
+      <div style="padding:16px;max-width:600px;margin:0 auto;">
         <div class="tabs">
-          <div class="tab active" id="stab-ueben" onclick="sTab('ueben')">Üben</div>
-          <div class="tab" id="stab-fortschritt" onclick="sTab('fortschritt')">Fortschritt</div>
-          <div class="tab" id="stab-abzeichen" onclick="sTab('abzeichen')">Abzeichen</div>
+          <div class="tab active" id="stab-ueben" onclick="sTab('ueben')">${isEN?'Practice':'Üben'}</div>
+          <div class="tab" id="stab-fort" onclick="sTab('fort')">${isEN?'Progress':'Fortschritt'}</div>
         </div>
         <div id="s-content"></div>
       </div>
@@ -1203,178 +651,140 @@ function buildStudent(){
   sTab('ueben');
 }
 
-function sTab(tab){
-  stView=tab;
-  document.querySelectorAll('.tab[id^="stab-"]').forEach(el=>el.classList.remove('active'));
-  const el=document.getElementById('stab-'+tab);if(el)el.classList.add('active');
-  if(tab==='ueben')renderSUeben();
-  else if(tab==='fortschritt')renderSFort();
-  else if(tab==='abzeichen')renderSAbz();
+async function sTab(t){
+  document.querySelectorAll('.tab[id^="stab-"]').forEach(e=>e.classList.remove('active'));
+  const el=document.getElementById('stab-'+t);if(el)el.classList.add('active');
+  t==='ueben'?await renderSUeben():await renderSFort();
 }
 
-function renderSUeben(){
-  const s=CU.student;
-  const isEN=s.lang==='EN';
-  if(activeTaskMs){document.getElementById('s-content').innerHTML=renderTaskBox();generateSTask(activeTaskMs);return;}
-  const gaps=MS.filter(m=>getSt(s,m.id)===-1);
-  const inProg=MS.filter(m=>getSt(s,m.id)===1);
-  const unlocked=MS.filter(m=>{const st=getSt(s,m.id);return st===0&&(m.pre||[]).every(p=>getSt(s,p)>=2);});
-  const done=MS.filter(m=>getSt(s,m.id)>=2);
-  const locked=MS.filter(m=>{const st=getSt(s,m.id);return st===0&&(m.pre||[]).some(p=>getSt(s,p)<2);});
+async function renderSUeben(){
+  const c=document.getElementById('s-content');
+  if(activeMs){c.innerHTML=sTBox();genTask(activeMs);return;}
+  let msStatus={};
+  if(!DEMO&&sb&&CU?.id){const{data}=await sb.from('schueler_milestones').select('*').eq('schueler_id',CU.id);(data||[]).forEach(m=>msStatus[m.milestone_id]=m.uebungs_status||0);}
+  const getSt=id=>msStatus[id]||0;
+  const isEN=CU?.sprache==='EN';
   const sections=[
-    {label:isEN?'⚠ Fill gaps':'⚠ Lücken',items:gaps,color:'var(--red)',icon:'⚠'},
-    {label:isEN?'▶ In progress':'▶ In Arbeit',items:inProg,color:'var(--amber)',icon:'⟳'},
-    {label:isEN?'🔓 Ready':'🔓 Bereit',items:unlocked,color:'var(--teal)',icon:'▶'},
-    {label:isEN?'✓ Done':'✓ Erledigt',items:done,color:'var(--green)',icon:'✓'},
-    {label:isEN?'🔒 Locked':'🔒 Gesperrt',items:locked,color:'var(--gray-m)',icon:'🔒'},
-  ].filter(sec=>sec.items.length);
-  document.getElementById('s-content').innerHTML=sections.map(sec=>`
-    <div style="margin-bottom:18px;">
-      <div style="font-size:10px;font-weight:600;color:${sec.color};text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">${sec.label}</div>
-      ${sec.items.map(m=>{
-        const st=getSt(s,m.id);const isLocked=sec.icon==='🔒';const isDone=st>=2;
-        return`<div class="ms-card ${isLocked?'locked':''}" onclick="${isLocked?'':isDone?`startSTask('${m.id}')`:`startSTask('${m.id}')`}">
-          <div class="ms-icon" style="background:${isDone?'var(--green-l)':isLocked?'var(--gray-l)':'var(--purple-l)'};">${isDone?'✓':isLocked?'🔒':sec.icon}</div>
-          <div style="flex:1;"><div style="font-size:13px;font-weight:600;">${isEN?m.en:m.title}</div>
-          <div style="font-size:10px;color:var(--gray-m);">${m.id} · ${m.niv===2?'★★':m.niv===3?'★★★':'★'}</div>
-          ${st===-1?`<span class="pill pill-red" style="margin-top:3px;font-size:10px;">Lücke</span>`:st===1?`<span class="pill pill-amber" style="margin-top:3px;font-size:10px;">In Arbeit</span>`:''}</div>
-          ${!isLocked?`<span style="font-size:12px;color:var(--teal);">${isEN?'Practice →':'Üben →'}</span>`:''}
-        </div>`;
-      }).join('')}
-    </div>`).join('');
+    {l:isEN?'⚠ Gaps':'⚠ Lücken',items:MS.filter(m=>getSt(m.id)===-1),c:'var(--red)',i:'⚠'},
+    {l:isEN?'▶ In progress':'▶ In Arbeit',items:MS.filter(m=>getSt(m.id)===1),c:'var(--amber)',i:'⟳'},
+    {l:isEN?'🔓 Ready':'🔓 Bereit',items:MS.filter(m=>getSt(m.id)===0&&(m.pre||[]).every(p=>getSt(p)>=2)),c:'var(--teal)',i:'▶'},
+    {l:isEN?'✓ Done':'✓ Erledigt',items:MS.filter(m=>getSt(m.id)>=2),c:'var(--green)',i:'✓'},
+    {l:isEN?'🔒 Locked':'🔒 Gesperrt',items:MS.filter(m=>getSt(m.id)===0&&(m.pre||[]).some(p=>getSt(p)<2)),c:'var(--gray-m)',i:'🔒'},
+  ].filter(s=>s.items.length);
+  c.innerHTML=sections.map(s=>`<div style="margin-bottom:16px;">
+    <div style="font-size:10px;font-weight:600;color:${s.c};text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px;">${s.l}</div>
+    ${s.items.map(m=>{const lk=s.i==='🔒';const dn=getSt(m.id)>=2;return`<div class="ms-card ${lk?'locked':''}" onclick="${lk?'':isDone?'':''}startST('${m.id}')">
+      <div style="width:30px;height:30px;border-radius:50%;background:${dn?'var(--green-l)':lk?'var(--gray-l)':'var(--purple-l)'};display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">${dn?'✓':lk?'🔒':s.i}</div>
+      <div style="flex:1;"><div style="font-size:13px;font-weight:600;">${isEN?m.en:m.title}</div><div style="font-size:10px;color:var(--gray-m);">${m.id}</div></div>
+      ${!lk?`<span style="font-size:11px;color:var(--teal);">${isEN?'Go →':'Los →'}</span>`:''}
+    </div>`;}).join('')}
+  </div>`).join('');
 }
 
-function startSTask(msId){activeTaskMs=msId;renderSUeben();}
-function renderTaskBox(){return`<div><div style="cursor:pointer;font-size:12px;color:var(--gray-m);margin-bottom:14px;" onclick="activeTaskMs=null;renderSUeben()">← Zurück</div><div id="s-task-area"><div class="task-box"><div class="loadbar"></div><div style="text-align:center;padding:20px;color:var(--purple);">✦ Aufgabe wird erstellt…</div></div></div></div>`;}
+function startST(msId){activeMs=msId;renderSUeben();}
+function sTBox(){return`<div><div style="cursor:pointer;font-size:12px;color:var(--gray-m);margin-bottom:12px;" onclick="activeMs=null;renderSUeben()">← Zurück</div><div id="s-task"><div class="task-box"><div class="loadbar"></div><div style="text-align:center;padding:18px;color:var(--purple);">✦ Aufgabe wird erstellt…</div></div></div></div>`;}
 
-async function generateSTask(msId){
-  const ms=MS.find(m=>m.id===msId);const s=CU.student;const isEN=s.lang==='EN';
-  const st=getSt(s,msId);
-  const prompt=`You are a friendly math teacher for grade 5/6 at SIS Swiss International School.
-Create ONE engaging math task for: ${s.name} (${s.lang})
-Milestone: ${msId} "${ms.title}" (Bloom: ${ms.bloom})
-${st===-1?'REMEDIAL: student has a gap. Be extra supportive and start from basics.':st===2||st===3?'ADVANCED: student mastered this. Challenge them!':'Standard level.'}
-Language: ${isEN?'English':'Deutsch (or bilingual if student is bilingual)'}
-Use a fun real-world context. Keep it age-appropriate for 10-12 year olds.
-Respond ONLY with JSON: {"context":"1-sentence scenario","question":"the question","hint":"gentle 1-sentence hint","solution":"the answer","steps":["step1","step2"],"xp":${st===-1?20:15}}`;
+async function genTask(msId){
+  const ms=MS.find(m=>m.id===msId);const isEN=CU?.sprache==='EN';
+  const prompt=`Friendly math teacher grade 5/6. ONE task for ${CU?.vorname||'student'} (${CU?.sprache||'DE'}). Milestone: ${msId} "${ms?.title}" Bloom: ${ms?.bloom}. Language: ${isEN?'English':'Deutsch'}. Fun real-world context. Respond ONLY JSON: {"context":"","question":"","hint":"","solution":"","steps":[""],"xp":15}`;
   try{
-    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:600,messages:[{role:"user",content:prompt}]})});
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:prompt}]})});
     const d=await r.json();
     const raw=d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
-    showSTask(JSON.parse(raw),ms);
-  }catch(e){
-    showSTask({context:isEN?"It's pizza day at school!":"Heute gibt es Pizza zum Mittagessen.",question:isEN?"Max eats 2/8 and Sara eats 3/8 of the pizza. How much in total?":"Max isst 2/8, Sara isst 3/8 der Pizza. Wie viel zusammen?",hint:isEN?"Same denominator — just add the top numbers!":"Gleicher Nenner — addiere nur die Zähler!",solution:"5/8",steps:isEN?["Same denominator: 8","2+3=5","Answer: 5/8"]:["Gleicher Nenner: 8","2+3=5","Ergebnis: 5/8"],xp:15},ms);
-  }
+    showTask(JSON.parse(raw),ms);
+  }catch(e){showTask({context:isEN?"Pizza day!":"Mittagessen: Pizza!",question:isEN?"Max eats 2/8, Sara 3/8. Total?":"Max 2/8, Sara 3/8. Zusammen?",hint:isEN?"Same denominator!":"Gleicher Nenner!",solution:"5/8",steps:["2+3=5","→ 5/8"],xp:15},ms);}
 }
 
-function showSTask(task,ms){
-  const s=CU.student;const isEN=s.lang==='EN';
-  const area=document.getElementById('s-task-area');if(!area)return;
+function showTask(t,ms){
+  const isEN=CU?.sprache==='EN';
+  const area=document.getElementById('s-task');if(!area)return;
+  const ts=JSON.stringify(t).replace(/"/g,'&quot;');
   area.innerHTML=`<div class="task-box fade-up">
-    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-      <span class="pill pill-purple">${ms.id}</span>
-      <span class="pill pill-teal">+${task.xp} XP</span>
-    </div>
-    <div class="task-ctx-s">${task.context}</div>
-    <div class="task-prompt">${task.question}</div>
+    <div style="display:flex;gap:6px;margin-bottom:8px;"><span class="pill pill-purple">${ms?.id}</span><span class="pill pill-teal">+${t.xp} XP</span></div>
+    <div style="font-size:12px;color:var(--gray-m);font-style:italic;margin-bottom:4px;">${t.context}</div>
+    <div class="task-prompt">${t.question}</div>
     <textarea class="task-inp" id="s-ans" placeholder="${isEN?'Your answer…':'Deine Antwort…'}"></textarea>
-    <div style="display:flex;gap:8px;margin-top:10px;">
-      <button class="btn btn-purple" onclick="checkSAns(${JSON.stringify(JSON.stringify(task))})">✓ ${isEN?'Check':'Prüfen'}</button>
-      <button class="btn btn-ghost" onclick="document.getElementById('s-hint').style.display='block'">${isEN?'Hint':'Tipp'} 💡</button>
+    <div style="display:flex;gap:8px;margin-top:9px;">
+      <button class="btn btn-purple btn-sm" onclick="checkAns('${ts}')">✓ ${isEN?'Check':'Prüfen'}</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('s-hint').style.display='block'">${isEN?'Hint':'Tipp'} 💡</button>
     </div>
-    <div id="s-hint" style="display:none;" class="alert alert-teal" style="margin-top:8px;">💡 ${task.hint}</div>
+    <div id="s-hint" style="display:none;margin-top:7px;" class="alert alert-teal">💡 ${t.hint}</div>
     <div id="s-fb"></div>
   </div>
-  <div class="card" style="margin-top:12px;">
-    <div class="card-title">${isEN?'Solution (teacher)':'Lösung (Lehrperson)'}</div>
-    <div style="font-weight:600;">${task.solution}</div>
-    ${task.steps.map((st,i)=>`<div style="font-size:11px;color:var(--gray-m);margin-top:3px;">${i+1}. ${st}</div>`).join('')}
+  <div class="card" style="margin-top:10px;">
+    <div class="card-title">${isEN?'Solution':'Lösung'}</div>
+    <div style="font-weight:600;">${t.solution}</div>
+    ${t.steps.map((s,i)=>`<div style="font-size:11px;color:var(--gray-m);margin-top:2px;">${i+1}. ${s}</div>`).join('')}
   </div>`;
 }
 
-async function checkSAns(taskJson){
-  const task=JSON.parse(taskJson);const ans=document.getElementById('s-ans').value.trim();
-  const s=CU.student;const isEN=s.lang==='EN';
-  if(!ans){alert(isEN?'Please write an answer.':'Bitte Antwort eingeben.');return;}
-  const fb=document.getElementById('s-fb');fb.innerHTML=`<div class="loadbar" style="margin-top:8px;"></div>`;
-  const prompt=`Warm encouraging math feedback for grade 5/6 student ${s.name.split(' ')[0]}.
-Task: ${task.question} | Correct: ${task.solution} | Student wrote: ${ans}
-Language: ${isEN?'English':'Deutsch'}
-1-2 sentences, encouraging even if wrong. Respond ONLY with JSON: {"correct":true/false,"feedback":"..."}`;
+async function checkAns(ts){
+  const t=JSON.parse(ts.replace(/&quot;/g,'"'));
+  const ans=document.getElementById('s-ans').value.trim();
+  const isEN=CU?.sprache==='EN';
+  if(!ans){alert(isEN?'Please write an answer.':'Antwort eingeben.');return;}
+  const fb=document.getElementById('s-fb');fb.innerHTML=`<div class="loadbar" style="margin-top:7px;"></div>`;
   try{
-    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:200,messages:[{role:"user",content:prompt}]})});
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:180,messages:[{role:'user',content:`Warm feedback for grade 5/6 student ${CU?.vorname||''}. Task: ${t.question} Correct: ${t.solution} Student: ${ans} Language: ${isEN?'English':'Deutsch'} ONLY JSON: {"correct":false,"feedback":""}`}]})});
     const d=await r.json();
     const raw=d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
-    const res=JSON.parse(raw);showSFb(res.correct,res.feedback,task.xp);
-  }catch(e){
-    const ok=ans.replace(/\s/g,'')==task.solution.replace(/\s/g,'');
-    showSFb(ok,ok?(isEN?`Great job! That's exactly right.`:`Super! Das ist genau richtig.`):(isEN?`Not quite — check the hint!`:`Noch nicht ganz — schau nochmal auf den Tipp!`),task.xp);
-  }
+    const res=JSON.parse(raw);showFb(res.correct,res.feedback,t.xp);
+  }catch(e){const ok=ans.includes(t.solution.split(' ')[0]);showFb(ok,ok?(isEN?'Great!':'Super!'):(isEN?'Try again!':'Nochmal!'),t.xp);}
 }
 
-function showSFb(correct,feedback,xp){
-  const isEN=CU.student.lang==='EN';
-  document.getElementById('s-fb').innerHTML=`<div class="ai-fb fade-up" style="margin-top:10px;">
-    <div class="ai-fb-label">✦ Feedback</div>
-    <div style="font-size:15px;margin-bottom:5px;color:${correct?'var(--green)':'var(--coral)'};">${correct?'🎉 '+(isEN?'Correct!':'Richtig!'):'🤔 '+(isEN?'Almost!':'Fast!')}</div>
+async function showFb(correct,feedback,xp){
+  const isEN=CU?.sprache==='EN';
+  document.getElementById('s-fb').innerHTML=`<div class="ai-fb fade-up" style="margin-top:9px;">
+    <div style="font-size:10px;font-weight:600;color:var(--purple);text-transform:uppercase;margin-bottom:3px;">✦ Feedback</div>
+    <div style="font-size:14px;margin-bottom:4px;color:${correct?'var(--green)':'var(--coral)'};">${correct?'🎉 '+(isEN?'Correct!':'Richtig!'):'🤔 '+(isEN?'Almost!':'Fast!')}</div>
     <div>${feedback}</div>
-    ${correct?`<div class="alert alert-green" style="margin-top:8px;">+${xp} XP! <button class="btn btn-teal btn-sm" style="margin-left:8px;" onclick="awardXP(${xp})">${isEN?'Collect':'Einlösen'}</button></div>`:''}
+    ${correct?`<div class="alert alert-green" style="margin-top:7px;">+${xp} XP!
+      <button class="btn btn-teal btn-sm" style="margin-left:8px;" onclick="giveXP(${xp})">${isEN?'Collect':'Einlösen'}</button>
+    </div>`:''}
   </div>`;
 }
 
-function awardXP(amount){
-  const s=CU.student;s.xp+=amount;
-  const saved=JSON.parse(localStorage.getItem('sis_'+s.id)||'{}');
-  saved.xp=s.xp;localStorage.setItem('sis_'+s.id,JSON.stringify(saved));
-  activeTaskMs=null;
-  setTimeout(()=>{buildStudent();},900);
+async function giveXP(xp){
+  if(!DEMO&&sb&&CU?.id){const{data}=await sb.from('profiles').select('xp').eq('id',CU.id).single();await sb.from('profiles').update({xp:(data?.xp||0)+xp}).eq('id',CU.id);}
+  activeMs=null;buildStudent();
 }
 
-function renderSFort(){
-  const s=CU.student;const isEN=s.lang==='EN';
-  const units=[...new Set(MS.map(m=>m.unit))];
-  document.getElementById('s-content').innerHTML=`
-    <div class="g2" style="margin-bottom:16px;">
-      <div class="card"><div style="font-size:28px;font-weight:700;color:var(--teal);font-family:var(--serif);">${pct(s)}%</div>
-        <div style="font-size:12px;color:var(--gray-m);">${isEN?'Overall progress':'Gesamtfortschritt'}</div>
-        <div class="progress-bar" style="margin-top:8px;height:8px;"><div class="progress-fill" style="width:${pct(s)}%;background:var(--teal)"></div></div></div>
-      <div class="card"><div style="font-size:28px;font-weight:700;color:var(--purple);font-family:var(--serif);">Lvl ${lvl(s.xp)}</div>
-        <div style="font-size:12px;color:var(--gray-m);">${s.xp} XP · ${100-xpIn(s.xp)} ${isEN?'to next':'zum nächsten'}</div>
-        <div class="progress-bar" style="margin-top:8px;"><div class="progress-fill" style="width:${xpIn(s.xp)}%;background:var(--purple)"></div></div></div>
+async function renderSFort(){
+  const c=document.getElementById('s-content');
+  const isEN=CU?.sprache==='EN';
+  let msStatus={};
+  if(!DEMO&&sb&&CU?.id){const{data}=await sb.from('schueler_milestones').select('*').eq('schueler_id',CU.id);(data||[]).forEach(m=>msStatus[m.milestone_id]=m.uebungs_status||0);}
+  const getSt=id=>msStatus[id]||0;
+  const done=MS.filter(m=>getSt(m.id)>=2).length;
+  const pct=Math.round(done/MS.length*100);
+  c.innerHTML=`
+    <div class="g2" style="margin-bottom:12px;">
+      <div class="card"><div style="font-size:26px;font-weight:700;color:var(--teal);font-family:var(--serif);">${pct}%</div>
+        <div style="font-size:12px;color:var(--gray-m);">${isEN?'Overall':'Gesamt'}</div>
+        <div class="progress-bar" style="margin-top:6px;height:7px;"><div class="progress-fill" style="width:${pct}%;background:var(--teal)"></div></div></div>
+      <div class="card"><div style="font-size:26px;font-weight:700;color:var(--purple);font-family:var(--serif);">${done}/${MS.length}</div>
+        <div style="font-size:12px;color:var(--gray-m);">Milestones</div></div>
     </div>
-    ${units.map(u=>{const ms=MS.filter(m=>m.unit===u);const d=ms.filter(m=>getSt(s,m.id)>=2).length;const p=Math.round(d/ms.length*100);
-      return`<div class="card" style="margin-bottom:10px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="font-weight:500;">${u}</span><span style="font-size:12px;color:var(--gray-m);">${d}/${ms.length}</span></div>
-        <div class="progress-bar" style="margin-bottom:8px;"><div class="progress-fill" style="width:${p}%;background:var(--teal)"></div></div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;">${ms.map(m=>{const st=getSt(s,m.id);
-          return`<span style="font-size:10px;padding:2px 7px;border-radius:12px;background:${st>=2?'var(--green-l)':st===1?'var(--amber-l)':st===-1?'var(--red-l)':'var(--gray-l)'};color:${st>=2?'var(--green)':st===1?'var(--amber)':st===-1?'var(--red)':'var(--gray-m)'};">${m.id}</span>`;}).join('')}</div>
+    ${[...new Set(MS.map(m=>m.unit))].map(u=>{
+      const ms=MS.filter(m=>m.unit===u);const d=ms.filter(m=>getSt(m.id)>=2).length;const p=Math.round(d/ms.length*100);
+      return`<div class="card" style="margin-bottom:9px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;"><span style="font-weight:500;">${u}</span><span style="color:var(--gray-m);">${d}/${ms.length}</span></div>
+        <div class="progress-bar" style="margin-bottom:6px;"><div class="progress-fill" style="width:${p}%;background:var(--teal)"></div></div>
+        <div style="display:flex;flex-wrap:wrap;gap:3px;">${ms.map(m=>{const st=getSt(m.id);return`<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:${st>=2?'var(--green-l)':st===1?'var(--amber-l)':st===-1?'var(--red-l)':'var(--gray-l)'};color:${st>=2?'var(--green)':st===1?'var(--amber)':st===-1?'var(--red)':'var(--gray-m)'};">${m.id}</span>`;}).join('')}</div>
       </div>`;}).join('')}`;
 }
 
-function renderSAbz(){
-  const s=CU.student;const isEN=s.lang==='EN';
-  const done=MS.filter(m=>getSt(s,m.id)>=2).length;
-  const badges=[
-    {icon:'🌱',label:isEN?'First step':'Erster Schritt',desc:isEN?'First milestone done':'Ersten Milestone erreicht',earned:done>=1,cls:'pill-green'},
-    {icon:'⚡',label:isEN?'Halfway':'Halbzeit',desc:isEN?'50% done':'50% geschafft',earned:pct(s)>=50,cls:'pill-amber'},
-    {icon:'🏆',label:isEN?'Champion':'Champion',desc:isEN?'All done':'Alle erreicht',earned:pct(s)>=100,cls:'pill-purple'},
-    {icon:'⭐',label:isEN?'Advanced':'Vertiefung',desc:isEN?'★★★ achieved':'★★★ Niveau erreicht',earned:MS.some(m=>getSt(s,m.id)===3),cls:'pill-purple'},
-    {icon:'🔥',label:isEN?'On fire!':'Am Laufen!',desc:isEN?'200+ XP':'200+ XP verdient',earned:s.xp>=200,cls:'pill-coral'},
-    {icon:'🌐',label:isEN?'Bilingual':'Zweisprachig',desc:isEN?'Bilingual learner':'Bilingual gelernt',earned:s.lang==='bilingual',cls:'pill-teal'},
-  ];
-  document.getElementById('s-content').innerHTML=`
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;">
-      ${badges.map(b=>`<div class="card" style="text-align:center;opacity:${b.earned?1:.35};">
-        <div style="font-size:32px;margin-bottom:8px;">${b.icon}</div>
-        <span class="pill ${b.cls}" style="margin-bottom:6px;">${b.label}</span>
-        <div style="font-size:11px;color:var(--gray-m);margin-top:6px;">${b.desc}</div>
-        ${b.earned?`<div style="font-size:10px;color:var(--green);margin-top:8px;font-weight:500;">✓ ${isEN?'Earned':'Erhalten'}</div>`:''}
-      </div>`).join('')}
-    </div>`;
+// ─── BOOT ────────────────────────────────────────────────
+async function boot(){
+  initSB();
+  if(sb){
+    const{data:{session}}=await sb.auth.getSession();
+    if(session){await loadProfile(session.user.id);launch();return;}
+  }
+  document.getElementById('login-screen').style.display='flex';
 }
 
-// Init
-document.getElementById('pin-inp').focus();
+boot();
 </script>
 </body>
 </html>
