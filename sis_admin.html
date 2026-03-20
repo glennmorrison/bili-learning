@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SIS Admin — Organisationsverwaltung</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -148,7 +149,7 @@ body{font-family:var(--sans);background:var(--gray-ll);color:var(--gray);font-si
   </div>
   <div style="display:flex;align-items:center;gap:10px;">
     <span class="role-badge">Super-Admin</span>
-    <span style="font-size:12px;opacity:.65;">admin@sis.ch</span>
+    <span style="font-size:12px;opacity:.65;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c2a3a6afabac82b1abb1eca1aa">[email&#160;protected]</a></span>
   </div>
 </div>
 
@@ -191,7 +192,15 @@ body{font-family:var(--sans);background:var(--gray-ll);color:var(--gray);font-si
   <div class="modal" id="modal-content"></div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ═══════════════════════════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════════════════════════
+const SB_URL = 'https://kcvfsmugfsfupzccynoi.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjdmZzbXVnZnNmdXB6Y2N5bm9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzkwNzgsImV4cCI6MjA4OTYxNTA3OH0.aUfTFVBpgYTCna57M6kUH7VgUMcfgyPKjRqpm6OvNs4';
+const SB_FN = 'https://kcvfsmugfsfupzccynoi.supabase.co/functions/v1';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
 // ═══════════════════════════════════════════════════════
 // DATA MODEL (simulated — replaces Supabase in demo)
 // ═══════════════════════════════════════════════════════
@@ -817,17 +826,40 @@ function openNewLpModal(){
       </div>
     </div>
     <div class="field"><label>Rolle</label>
-      <select class="sel">
-        <option>Lehrperson</option>
-        <option>Schulleitung</option>
-        <option>Länder-Admin</option>
+      <select class="sel" id="m-lp-rolle">
+        <option value="lehrperson">Lehrperson</option>
+        <option value="schulleitung">Schulleitung</option>
+        <option value="laender_admin">Länder-Admin</option>
+        <option value="super_admin">Super-Admin</option>
       </select>
     </div>
+    <div id="lp-modal-res" style="margin-bottom:8px;"></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Abbrechen</button>
-      <button class="btn btn-teal" onclick="closeModal()">Einladung senden</button>
+      <button class="btn btn-teal" onclick="saveLehrperson()">Einladung senden</button>
     </div>`);
 }
+
+async function saveLehrperson(){
+  const fn=document.getElementById('m-lp-fn').value.trim();
+  const ln=document.getElementById('m-lp-ln').value.trim();
+  const email=document.getElementById('m-lp-email').value.trim();
+  const rolle=document.getElementById('m-lp-rolle').value;
+  const res=document.getElementById('lp-modal-res');
+  if(!fn||!ln||!email){res.innerHTML='<div style="color:#A32D2D;font-size:12px;">Alle Felder ausfüllen.</div>';return;}
+  res.innerHTML='<div style="font-size:12px;color:#0F6E56;">Wird angelegt...</div>';
+  try{
+    const r=await fetch('https://kcvfsmugfsfupzccynoi.supabase.co/functions/v1/create-user',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjdmZzbXVnZnNmdXB6Y2N5bm9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzkwNzgsImV4cCI6MjA4OTYxNTA3OH0.aUfTFVBpgYTCna57M6kUH7VgUMcfgyPKjRqpm6OvNs4','apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjdmZzbXVnZnNmdXB6Y2N5bm9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzkwNzgsImV4cCI6MjA4OTYxNTA3OH0.aUfTFVBpgYTCna57M6kUH7VgUMcfgyPKjRqpm6OvNs4'},
+      body:JSON.stringify({vorname:fn,nachname:ln,email:email,password:'Bili2026!',rolle:rolle,sprache:'DE'})
+    });
+    const d=await r.json();
+    if(d.error){res.innerHTML='<div style="color:#A32D2D;font-size:12px;">'+d.error+'</div>';return;}
+    res.innerHTML='<div style="color:#3B6D11;font-size:12px;">Angelegt! Login: '+email+' / Bili2026!</div>';
+    setTimeout(function(){closeModal();},2500);
+  }catch(e){res.innerHTML='<div style="color:#A32D2D;font-size:12px;">Fehler: '+e.message+'</div>';}
+}
+
 function openEditLpModal(id){openModal(`<div class="modal-title">✏️ Lehrperson bearbeiten</div><div class="modal-sub">Zuweisung & Einstellungen</div><div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Schliessen</button></div>`);}
 
 // ═══════════════════════════════════════════════════════
@@ -1285,9 +1317,4 @@ function openModal(html){
 function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
 
 // ═══════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════
-showView('overview');
-</script>
-</body>
-</html>
+//
