@@ -194,14 +194,6 @@ body{font-family:var(--sans);background:var(--gray-ll);color:var(--gray);font-si
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ═══════════════════════════════════════════════════════
-// SUPABASE
-// ═══════════════════════════════════════════════════════
-const SB_URL = 'https://kcvfsmugfsfupzccynoi.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjdmZzbXVnZnNmdXB6Y2N5bm9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzkwNzgsImV4cCI6MjA4OTYxNTA3OH0.aUfTFVBpgYTCna57M6kUH7VgUMcfgyPKjRqpm6OvNs4';
-const SB_FN = 'https://kcvfsmugfsfupzccynoi.supabase.co/functions/v1';
-const sb = supabase.createClient(SB_URL, SB_KEY);
-
-// ═══════════════════════════════════════════════════════
 // DATA MODEL (simulated — replaces Supabase in demo)
 // ═══════════════════════════════════════════════════════
 const DB = {
@@ -255,6 +247,14 @@ const DB = {
 
 const LANG_LABELS = {DE:'Deutsch',EN:'English',FR:'Français',IT:'Italiano'};
 const ALL_LANGS = ['DE','EN','FR','IT','ES','ZH'];
+
+// ═══════════════════════════════════════════════════════
+// SUPABASE INIT
+// ═══════════════════════════════════════════════════════
+const SB_URL = 'https://kcvfsmugfsfupzccynoi.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjdmZzbXVnZnNmdXB6Y2N5bm9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzkwNzgsImV4cCI6MjA4OTYxNTA3OH0.aUfTFVBpgYTCna57M6kUH7VgUMcfgyPKjRqpm6OvNs4';
+const SB_FN = 'https://kcvfsmugfsfupzccynoi.supabase.co/functions/v1';
+const sb = supabase.createClient(SB_URL, SB_KEY);
 
 // ═══════════════════════════════════════════════════════
 // NAVIGATION
