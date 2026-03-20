@@ -108,7 +108,7 @@ input,select,textarea{font-family:var(--sans);}
       <div class="field"><label>Passwort</label><input class="inp" type="password" id="l-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
       <div id="l-err" style="color:var(--red);font-size:12px;text-align:center;margin-bottom:8px;min-height:16px;"></div>
       <button class="btn btn-teal" style="width:100%;justify-content:center;padding:12px;" id="l-btn" onclick="doLogin()">Einloggen →</button>
-      <div style="text-align:center;margin-top:12px;"><span style="font-size:11px;color:var(--gray-m);cursor:pointer;" onclick="demoLogin()">Demo ohne Account</span></div>
+
     </div>
     </div>
 </div>
@@ -132,13 +132,12 @@ input,select,textarea{font-family:var(--sans);}
 <script>
 // ─── SUPABASE ───────────────────────────────────────────
 const SB_URL = 'https://kcvfsmugfsfupzccynoi.supabase.co';
-const SB_KEY = localStorage.getItem('sb_key') || '';
+const SB_KEY = 'sb_publishable_lF-AD4Eigj_fS4vQz4Eb_Q_270TC_l-r2TM8htMS3Pqc';
 const SB_FN = 'https://kcvfsmugfsfupzccynoi.supabase.co/functions/v1';
 
 let sb = null;
 function initSB() {
-  const key = localStorage.getItem('sb_key');
-  if(key && SB_URL) { sb = supabase.createClient(SB_URL, key); return true; }
+  if(SB_URL && SB_KEY) { sb = supabase.createClient(SB_URL, SB_KEY); return true; }
   return false;
 }
 
@@ -389,7 +388,7 @@ async function gGen(){
   const ctx=document.getElementById('g-ctx').value.trim();
   document.getElementById('g-prev').innerHTML='<div class="loadbar"></div><div style="text-align:center;padding:30px;color:var(--gray-m);">✦ Claude generiert…</div>';
   try{
-    const r=await fetch(SB_FN+'/anthropic-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sb_key')||''),'apikey':(localStorage.getItem('sb_key')||'')},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:`Expert primary math teacher. Create ${anz} tasks. Language: ${GS.lang==='EN'?'English':GS.lang==='bilingual'?'bilingual DE/EN':'Deutsch'}. Milestones: ${msList.map(m=>m.id+' "'+m.title+'"').join(', ')}. Niveau: ${'★'.repeat(typeof GS.niveau==='number'?GS.niveau:2)}. ${ctx?'Theme: "'+ctx+'"':'Use varied grade 5/6 contexts.'} Respond ONLY JSON: {"tasks":[{"milestone_id":"","context":"","question":"","solution":"","bloom":"","niveau":1}]}`}]})});
+    const r=await fetch(SB_FN+'/anthropic-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(SB_KEY),'apikey':(SB_KEY)},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:`Expert primary math teacher. Create ${anz} tasks. Language: ${GS.lang==='EN'?'English':GS.lang==='bilingual'?'bilingual DE/EN':'Deutsch'}. Milestones: ${msList.map(m=>m.id+' "'+m.title+'"').join(', ')}. Niveau: ${'★'.repeat(typeof GS.niveau==='number'?GS.niveau:2)}. ${ctx?'Theme: "'+ctx+'"':'Use varied grade 5/6 contexts.'} Respond ONLY JSON: {"tasks":[{"milestone_id":"","context":"","question":"","solution":"","bloom":"","niveau":1}]}`}]})});
     const d=await r.json();
     const raw=d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
     gRender(JSON.parse(raw).tasks);
@@ -498,7 +497,7 @@ async function analyzeUpl(){
   r.onload=async e=>{
     const b64=e.target.result.split(',')[1];const mt=uploadFile.type||'image/jpeg';
     try{
-      const resp=await fetch(SB_FN+'/anthropic-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sb_key')||''),'apikey':(localStorage.getItem('sb_key')||'')},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mt,data:b64}},{type:'text',text:`Analyze this math worksheet. For each task: milestone_id, student_answer, is_correct. Known milestones: ${MS.map(m=>m.id+':'+m.title).join(',')}. Respond ONLY JSON: {"student_name":"","tasks":[{"milestone_id":"","student_answer":"","is_correct":true,"notes":""}],"overall_impression":""}`}]}]})});
+      const resp=await fetch(SB_FN+'/anthropic-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(SB_KEY),'apikey':(SB_KEY)},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mt,data:b64}},{type:'text',text:`Analyze this math worksheet. For each task: milestone_id, student_answer, is_correct. Known milestones: ${MS.map(m=>m.id+':'+m.title).join(',')}. Respond ONLY JSON: {"student_name":"","tasks":[{"milestone_id":"","student_answer":"","is_correct":true,"notes":""}],"overall_impression":""}`}]}]})});
       const d=await resp.json();
       const raw=d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
       renderAnal(JSON.parse(raw));
@@ -550,7 +549,7 @@ function renderSetup(){
       <div class="card">
         <div class="card-title">Supabase Key konfigurieren</div>
         <div class="alert alert-teal" style="margin-bottom:12px;">Publishable Key aus Supabase → Project Settings → API Keys</div>
-        <div class="field"><label>Publishable Key</label><input class="inp" type="password" id="sb-key-inp" placeholder="sb_publishable_..." value="${localStorage.getItem('sb_key')||''}"></div>
+        <div class="field"><label>Publishable Key</label><input class="inp" type="password" id="sb-key-inp" placeholder="sb_publishable_..." value="${SB_KEY}"></div>
         <button class="btn btn-teal" onclick="saveSBKey()">Speichern & neu laden</button>
       </div>
       <div class="card">
@@ -570,12 +569,7 @@ function renderSetup(){
     </div>`;
 }
 
-function saveSBKey(){
-  const key=document.getElementById('sb-key-inp').value.trim();
-  if(!key){alert('Key eingeben.');return;}
-  localStorage.setItem('sb_key',key);
-  location.reload();
-}
+
 
 async function createSchueler(){
   const fn=document.getElementById('ns-fn').value.trim();
@@ -590,7 +584,7 @@ async function createSchueler(){
   if(!DEMO){
     try{
       const r=await fetch(SB_FN+'/create-user',{method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sb_key')||''),'apikey':(localStorage.getItem('sb_key')||'')},
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+(SB_KEY),'apikey':(SB_KEY)},
         body:JSON.stringify({vorname:fn,nachname:ln,email,password:pass,rolle:'schueler',sprache:lang})
       });
       const d=await r.json();
@@ -664,7 +658,7 @@ async function genTask(msId){
   const ms=MS.find(m=>m.id===msId);const isEN=CU?.sprache==='EN';
   const prompt=`Friendly math teacher grade 5/6. ONE task for ${CU?.vorname||'student'} (${CU?.sprache||'DE'}). Milestone: ${msId} "${ms?.title}" Bloom: ${ms?.bloom}. Language: ${isEN?'English':'Deutsch'}. Fun real-world context. Respond ONLY JSON: {"context":"","question":"","hint":"","solution":"","steps":[""],"xp":15}`;
   try{
-    const r=await fetch(SB_FN+'/anthropic-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sb_key')||''),'apikey':(localStorage.getItem('sb_key')||'')},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:prompt}]})});
+    const r=await fetch(SB_FN+'/anthropic-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(SB_KEY),'apikey':(SB_KEY)},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:prompt}]})});
     const d=await r.json();
     const raw=d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
     showTask(JSON.parse(raw),ms);
@@ -701,7 +695,7 @@ async function checkAns(ts){
   if(!ans){alert(isEN?'Please write an answer.':'Antwort eingeben.');return;}
   const fb=document.getElementById('s-fb');fb.innerHTML=`<div class="loadbar" style="margin-top:7px;"></div>`;
   try{
-    const r=await fetch(SB_FN+'/anthropic-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sb_key')||''),'apikey':(localStorage.getItem('sb_key')||'')},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:180,messages:[{role:'user',content:`Warm feedback for grade 5/6 student ${CU?.vorname||''}. Task: ${t.question} Correct: ${t.solution} Student: ${ans} Language: ${isEN?'English':'Deutsch'} ONLY JSON: {"correct":false,"feedback":""}`}]})});
+    const r=await fetch(SB_FN+'/anthropic-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(SB_KEY),'apikey':(SB_KEY)},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:180,messages:[{role:'user',content:`Warm feedback for grade 5/6 student ${CU?.vorname||''}. Task: ${t.question} Correct: ${t.solution} Student: ${ans} Language: ${isEN?'English':'Deutsch'} ONLY JSON: {"correct":false,"feedback":""}`}]})});
     const d=await r.json();
     const raw=d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
     const res=JSON.parse(raw);showFb(res.correct,res.feedback,t.xp);
