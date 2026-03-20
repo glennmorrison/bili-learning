@@ -157,6 +157,7 @@ input,select,textarea{font-family:var(--sans);}
 // ─── SUPABASE ───────────────────────────────────────────
 const SB_URL = 'https://kcvfsmugfsfupzccynoi.supabase.co';
 const SB_KEY = localStorage.getItem('sb_key') || '';
+const SB_FN = 'https://kcvfsmugfsfupzccynoi.supabase.co/functions/v1';
 
 let sb = null;
 function initSB() {
@@ -418,7 +419,7 @@ async function gGen(){
   const ctx=document.getElementById('g-ctx').value.trim();
   document.getElementById('g-prev').innerHTML='<div class="loadbar"></div><div style="text-align:center;padding:30px;color:var(--gray-m);">✦ Claude generiert…</div>';
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:`Expert primary math teacher. Create ${anz} tasks. Language: ${GS.lang==='EN'?'English':GS.lang==='bilingual'?'bilingual DE/EN':'Deutsch'}. Milestones: ${msList.map(m=>m.id+' "'+m.title+'"').join(', ')}. Niveau: ${'★'.repeat(typeof GS.niveau==='number'?GS.niveau:2)}. ${ctx?'Theme: "'+ctx+'"':'Use varied grade 5/6 contexts.'} Respond ONLY JSON: {"tasks":[{"milestone_id":"","context":"","question":"","solution":"","bloom":"","niveau":1}]}`}]})});
+    const r=await fetch(SB_FN+'/anthropic-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sb_key')||''),'apikey':(localStorage.getItem('sb_key')||'')},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:`Expert primary math teacher. Create ${anz} tasks. Language: ${GS.lang==='EN'?'English':GS.lang==='bilingual'?'bilingual DE/EN':'Deutsch'}. Milestones: ${msList.map(m=>m.id+' "'+m.title+'"').join(', ')}. Niveau: ${'★'.repeat(typeof GS.niveau==='number'?GS.niveau:2)}. ${ctx?'Theme: "'+ctx+'"':'Use varied grade 5/6 contexts.'} Respond ONLY JSON: {"tasks":[{"milestone_id":"","context":"","question":"","solution":"","bloom":"","niveau":1}]}`}]})});
     const d=await r.json();
     const raw=d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
     gRender(JSON.parse(raw).tasks);
@@ -527,7 +528,7 @@ async function analyzeUpl(){
   r.onload=async e=>{
     const b64=e.target.result.split(',')[1];const mt=uploadFile.type||'image/jpeg';
     try{
-      const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mt,data:b64}},{type:'text',text:`Analyze this math worksheet. For each task: milestone_id, student_answer, is_correct. Known milestones: ${MS.map(m=>m.id+':'+m.title).join(',')}. Respond ONLY JSON: {"student_name":"","tasks":[{"milestone_id":"","student_answer":"","is_correct":true,"notes":""}],"overall_impression":""}`}]}]})});
+      const resp=await fetch(SB_FN+'/anthropic-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sb_key')||''),'apikey':(localStorage.getItem('sb_key')||'')},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mt,data:b64}},{type:'text',text:`Analyze this math worksheet. For each task: milestone_id, student_answer, is_correct. Known milestones: ${MS.map(m=>m.id+':'+m.title).join(',')}. Respond ONLY JSON: {"student_name":"","tasks":[{"milestone_id":"","student_answer":"","is_correct":true,"notes":""}],"overall_impression":""}`}]}]})});
       const d=await resp.json();
       const raw=d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
       renderAnal(JSON.parse(raw));
@@ -616,12 +617,17 @@ async function createSchueler(){
   if(!fn||!ln||!email||!pass){res.innerHTML='<div class="alert alert-red">Alle Felder ausfüllen.</div>';return;}
   if(pass.length<8){res.innerHTML='<div class="alert alert-red">Passwort mind. 8 Zeichen.</div>';return;}
   res.innerHTML='<div class="loadbar"></div>';
-  if(!DEMO&&sb){
-    const{data,error}=await sb.auth.signUp({email,password:pass});
-    if(error){res.innerHTML=`<div class="alert alert-red">${error.message}</div>`;return;}
-    await sb.from('profiles').insert({id:data.user.id,vorname:fn,nachname:ln,email,rolle:'schueler',sprache:lang,aktiv:true,einwilligung:false});
-    res.innerHTML=`<div class="alert alert-green">✓ ${fn} ${ln} angelegt!<br>Login: ${email} · Passwort: (wie eingegeben)</div>`;
-  }else{res.innerHTML='<div class="alert alert-amber">Demo-Modus: nicht wirklich gespeichert.</div>';}
+  if(!DEMO){
+    try{
+      const r=await fetch(SB_FN+'/create-user',{method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sb_key')||''),'apikey':(localStorage.getItem('sb_key')||'')},
+        body:JSON.stringify({vorname:fn,nachname:ln,email,password:pass,rolle:'schueler',sprache:lang})
+      });
+      const d=await r.json();
+      if(d.error){res.innerHTML=`<div class="alert alert-red">${d.error}</div>`;return;}
+      res.innerHTML=`<div class="alert alert-green">✓ ${fn} ${ln} angelegt!<br>Login: ${email}</div>`;
+    }catch(e){res.innerHTML=`<div class="alert alert-red">Fehler: ${e.message}</div>`;}
+  }else{res.innerHTML='<div class="alert alert-amber">Demo-Modus: nicht gespeichert.</div>';}
 }
 
 // ─── STUDENT ────────────────────────────────────────────
@@ -688,7 +694,7 @@ async function genTask(msId){
   const ms=MS.find(m=>m.id===msId);const isEN=CU?.sprache==='EN';
   const prompt=`Friendly math teacher grade 5/6. ONE task for ${CU?.vorname||'student'} (${CU?.sprache||'DE'}). Milestone: ${msId} "${ms?.title}" Bloom: ${ms?.bloom}. Language: ${isEN?'English':'Deutsch'}. Fun real-world context. Respond ONLY JSON: {"context":"","question":"","hint":"","solution":"","steps":[""],"xp":15}`;
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:prompt}]})});
+    const r=await fetch(SB_FN+'/anthropic-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sb_key')||''),'apikey':(localStorage.getItem('sb_key')||'')},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:prompt}]})});
     const d=await r.json();
     const raw=d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
     showTask(JSON.parse(raw),ms);
@@ -725,7 +731,7 @@ async function checkAns(ts){
   if(!ans){alert(isEN?'Please write an answer.':'Antwort eingeben.');return;}
   const fb=document.getElementById('s-fb');fb.innerHTML=`<div class="loadbar" style="margin-top:7px;"></div>`;
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:180,messages:[{role:'user',content:`Warm feedback for grade 5/6 student ${CU?.vorname||''}. Task: ${t.question} Correct: ${t.solution} Student: ${ans} Language: ${isEN?'English':'Deutsch'} ONLY JSON: {"correct":false,"feedback":""}`}]})});
+    const r=await fetch(SB_FN+'/anthropic-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sb_key')||''),'apikey':(localStorage.getItem('sb_key')||'')},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:180,messages:[{role:'user',content:`Warm feedback for grade 5/6 student ${CU?.vorname||''}. Task: ${t.question} Correct: ${t.solution} Student: ${ans} Language: ${isEN?'English':'Deutsch'} ONLY JSON: {"correct":false,"feedback":""}`}]})});
     const d=await r.json();
     const raw=d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
     const res=JSON.parse(raw);showFb(res.correct,res.feedback,t.xp);
