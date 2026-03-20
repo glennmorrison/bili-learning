@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIS · Aufgabenblatt-Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --teal:#0F6E56;--teal-m:#1D9E75;--teal-l:#E1F5EE;--teal-d:#085041;
+  --purple:#534AB7;--purple-l:#EEEDFE;--purple-d:#3C3489;
+  --coral:#993C1D;--coral-l:#FAECE7;
+  --amber:#854F0B;--amber-l:#FAEEDA;
+  --gray:#2C2C2A;--gray-m:#73726C;--gray-l:#F1EFE8;--gray-ll:#F8F7F2;
+  --green:#3B6D11;--green-l:#EAF3DE;
+  --border:#E0DED6;--surface:#FFFFFF;
+  --r:12px;--rs:8px;
+  --serif:'DM Serif Display',Georgia,serif;
+  --sans:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--sans);background:var(--gray-ll);color:var(--gray);min-height:100vh;}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--teal-d);color:#fff;padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-brand{display:flex;align-items:center;gap:12px;}
+.topbar-logo{font-family:var(--serif);font-size:18px;letter-spacing:-.01em;}
+.topbar-sep{width:1px;height:20px;background:rgba(255,255,255,.2);}
+.topbar-title{font-size:13px;opacity:.75;font-weight:300;}
+.topbar-actions{display:flex;gap:8px;}
+
+/* ── LAYOUT ── */
+.app{display:grid;grid-template-columns:380px 1fr;min-height:calc(100vh - 56px);}
+.panel{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:28px 24px;}
+.preview-area{padding:28px;overflow-y:auto;}
+
+/* ── PANEL UI ── */
+.section{margin-bottom:28px;}
+.section-title{font-family:var(--serif);font-size:15px;color:var(--teal-d);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.field{margin-bottom:14px;}
+.label{font-size:11px;font-weight:600;color:var(--gray-m);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:block;}
+.input,.select,.textarea{width:100%;border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-size:13px;font-family:var(--sans);color:var(--gray);background:#fff;transition:border .15s;outline:none;}
+.input:focus,.select:focus,.textarea:focus{border-color:var(--teal);}
+.textarea{resize:vertical;min-height:70px;line-height:1.5;}
+.select{cursor:pointer;}
+
+/* Mode toggle */
+.mode-toggle{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--gray-l);padding:4px;border-radius:var(--rs);}
+.mode-btn{padding:8px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;background:transparent;color:var(--gray-m);}
+.mode-btn.active{background:#fff;color:var(--teal);box-shadow:0 1px 4px rgba(0,0,0,.1);}
+
+/* Student chips */
+.student-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.s-chip{display:flex;align-items:center;gap:5px;padding:4px 10px 4px 6px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid transparent;transition:all .15s;user-select:none;}
+.s-chip .avatar{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0;}
+.s-chip.selected{border-color:var(--teal);background:var(--teal-l);}
+.s-chip:not(.selected){border-color:var(--border);background:#fff;color:var(--gray-m);}
+
+/* Milestone pills */
+.ms-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;}
+.ms-pill{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1.5px solid transparent;transition:all .15s;user-select:none;}
+.ms-pill.selected{background:var(--purple-l);border-color:var(--purple);color:var(--purple);}
+.ms-pill:not(.selected){background:#fff;border-color:var(--border);color:var(--gray-m);}
+
+/* Niveau slider */
+.niveau-row{display:flex;gap:6px;}
+.niveau-btn{flex:1;padding:6px 4px;border:1.5px solid var(--border);border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;text-align:center;background:#fff;color:var(--gray-m);transition:all .15s;}
+.niveau-btn.active{border-color:var(--teal);background:var(--teal-l);color:var(--teal);}
+
+/* Generate button */
+.gen-btn{width:100%;padding:14px;border:none;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.gen-btn.ready{background:var(--teal);color:#fff;}
+.gen-btn.ready:hover{background:var(--teal-m);transform:translateY(-1px);box-shadow:0 4px 16px rgba(15,110,86,.3);}
+.gen-btn.loading{background:var(--gray-l);color:var(--gray-m);cursor:not-allowed;}
+.gen-btn-secondary{width:100%;padding:10px;border:1.5px solid var(--border);border-radius:var(--rs);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--sans);background:#fff;color:var(--gray);margin-top:8px;transition:all .15s;}
+.gen-btn-secondary:hover{border-color:var(--teal);color:var(--teal);}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes loadbar{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+.loadbar{height:3px;background:var(--teal-l);border-radius:2px;overflow:hidden;position:relative;margin-bottom:16px;}
+.loadbar::after{content:'';position:absolute;inset:0;background:var(--teal);animation:loadbar 1.1s ease infinite;}
+
+/* ── WORKSHEET PREVIEW ── */
+.preview-stack{display:flex;flex-direction:column;gap:20px;}
+.sheet{background:#fff;border-radius:var(--r);box-shadow:0 2px 12px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.04);overflow:hidden;transition:box-shadow .2s;}
+.sheet:hover{box-shadow:0 4px 24px rgba(0,0,0,.12),0 0 0 1px rgba(0,0,0,.06);}
+.sheet-inner{padding:32px 36px;}
+
+/* Sheet header */
+.sheet-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid var(--teal-d);}
+.sheet-school{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:3px;}
+.sheet-title{font-family:var(--serif);font-size:22px;color:var(--gray);line-height:1.2;}
+.sheet-meta{text-align:right;}
+.sheet-name{font-family:var(--serif);font-size:16px;color:var(--gray);margin-bottom:2px;}
+.sheet-date{font-size:11px;color:var(--gray-m);}
+.sheet-level-badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;margin-top:4px;}
+
+/* Info bar */
+.sheet-infobar{display:flex;gap:16px;margin-bottom:20px;padding:10px 14px;background:var(--gray-ll);border-radius:var(--rs);font-size:11px;color:var(--gray-m);}
+.sheet-infobar span{display:flex;align-items:center;gap:4px;}
+
+/* Tasks */
+.task-item{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+.task-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+.task-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;}
+.task-num{width:26px;height:26px;border-radius:50%;background:var(--teal-d);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px;}
+.task-ms{font-size:10px;font-family:var(--mono);color:var(--gray-m);background:var(--gray-l);padding:2px 6px;border-radius:4px;margin-left:auto;flex-shrink:0;}
+.task-context{font-size:12px;color:var(--gray-m);font-style:italic;margin-bottom:5px;line-height:1.5;}
+.task-question{font-size:14px;font-weight:500;line-height:1.6;color:var(--gray);}
+.task-space{margin-top:10px;border:1px dashed var(--border);border-radius:6px;height:56px;background:var(--gray-ll);}
+.task-bloom{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;display:inline-block;margin-top:6px;}
+
+/* Sheet footer */
+.sheet-footer{margin-top:20px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--gray-m);}
+
+/* Sheet actions */
+.sheet-actions{display:flex;gap:8px;padding:12px 16px;background:var(--gray-ll);border-top:1px solid var(--border);}
+.action-btn{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:#fff;color:var(--gray);transition:all .15s;font-family:var(--sans);}
+.action-btn:hover{border-color:var(--teal);color:var(--teal);}
+.action-btn.primary{background:var(--teal);color:#fff;border-color:var(--teal);}
+.action-btn.primary:hover{background:var(--teal-m);}
+
+/* Empty state */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:400px;color:var(--gray-m);text-align:center;gap:12px;}
+.empty-icon{width:64px;height:64px;border-radius:50%;background:var(--teal-l);display:flex;align-items:center;justify-content:center;font-size:28px;}
+.empty-title{font-family:var(--serif);font-size:20px;color:var(--gray);}
+.empty-sub{font-size:13px;max-width:280px;line-height:1.6;}
+
+/* Bloom colors */
+.bloom-verstehen{background:#E1F5EE;color:#0F6E56;}
+.bloom-anwenden{background:#EEEDFE;color:#534AB7;}
+.bloom-analysieren{background:#FAEEDA;color:#854F0B;}
+.bloom-erinnern{background:#F1EFE8;color:#73726C;}
+.bloom-evaluieren{background:#FAECE7;color:#993C1D;}
+
+/* Niveau badge colors */
+.niveau-1{background:#E1F5EE;color:#085041;}
+.niveau-2{background:#EEEDFE;color:#3C3489;}
+.niveau-3{background:#FAEEDA;color:#633806;}
+
+@keyframes slideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.sheet{animation:slideIn .3s ease both;}
+
+@media print {
+  .topbar,.panel,.sheet-actions{display:none!important;}
+  .app{display:block;}
+  .preview-area{padding:0;}
+  .sheet{box-shadow:none;border-radius:0;margin-bottom:0;page-break-after:always;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo">SIS AI Learning</div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-title">Aufgabenblatt-Generator</div>
+  </div>
+  <div class="topbar-actions">
+    <button class="action-btn" onclick="window.print()">Drucken</button>
+    <button class="action-btn primary" onclick="exportAll()">PDF exportieren</button>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- ── PANEL ── -->
+  <div class="panel">
+
+    <!-- Mode -->
+    <div class="section">
+      <div class="section-title">Modus</div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="mode-klasse" onclick="setMode('klasse')">Klassenblatt</button>
+        <button class="mode-btn" id="mode-individuell" onclick="setMode('individuell')">Individuell</button>
+      </div>
+    </div>
+
+    <!-- Klasse / Fach -->
+    <div class="section">
+      <div class="section-title">Grundeinstellungen</div>
+      <div class="field">
+        <label class="label">Klasse</label>
+        <select class="select" id="sel-klasse">
+          <option>5b — Mathematik</option>
+          <option>5a — Mathematik</option>
+          <option>6b — Mathematik</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="label">Sprache</label>
+        <div class="niveau-row">
+          <button class="niveau-btn active" id="lang-de" onclick="setLang('DE')">Deutsch</button>
+          <button class="niveau-btn" id="lang-en" onclick="setLang('EN')">English</button>
+          <button class="niveau-btn" id="lang-bi" onclick="setLang('bilingual')">Bilingual</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Datum</label>
+        <input type="date" class="input" id="inp-datum">
+      </div>
+    </div>
+
+    <!-- Schülerauswahl (individuell) -->
+    <div class="section" id="sec-schueler" style="display:none;">
+      <div class="section-title">Schülerinnen & Schüler</div>
+      <div class="student-grid" id="student-grid"></div>
+      <div style="margin-top:8px;display:flex;gap:8px;">
+        <button class="action-btn" onclick="selectAll()" style="font-size:11px;">Alle</button>
+        <button class="action-btn" onclick="selectNone()" style="font-size:11px;">Keine</button>
+        <button class="action-btn" onclick="selectGaps()" style="font-size:11px;color:var(--coral);">Nur mit Lücken</button>
+      </div>
+    </div>
+
+    <!-- Milestones -->
+    <div class="section">
+      <div class="section-title">Milestones (Fokus dieser Aufgabe)</div>
+      <div class="ms-grid" id="ms-grid"></div>
+      <div style="margin-top:8px;display:flex;gap:8px;">
+        <button class="action-btn" onclick="autoSelectMs()" style="font-size:11px;color:var(--teal);">KI-Empfehlung</button>
+        <button class="action-btn" onclick="clearMs()" style="font-size:11px;">Zurücksetzen</button>
+      </div>
+    </div>
+
+    <!-- Aufgaben-Einstellungen -->
+    <div class="section">
+      <div class="section-title">Aufgaben-Einstellungen</div>
+      <div class="field">
+        <label class="label">Anzahl Aufgaben pro Blatt</label>
+        <input type="range" min="2" max="8" value="4" id="inp-anzahl" style="width:100%;" oninput="document.getElementById('anzahl-val').textContent=this.value">
+        <div style="font-size:12px;color:var(--gray-m);margin-top:4px;">
+          <span id="anzahl-val">4</span> Aufgaben
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Niveau</label>
+        <div class="niveau-row">
+          <button class="niveau-btn active" id="niv-1" onclick="setNiveau(1)">★ Grund</button>
+          <button class="niveau-btn" id="niv-2" onclick="setNiveau(2)">★★ Erw.</button>
+          <button class="niveau-btn" id="niv-3" onclick="setNiveau(3)">★★★ Vertiefung</button>
+          <button class="niveau-btn" id="niv-mix" onclick="setNiveau('mix')">Mix</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Kontext / Thema (optional)</label>
+        <textarea class="textarea" id="inp-kontext" placeholder="z.B. Bauernhof, Fussball, Reise nach London…"></textarea>
+      </div>
+      <div class="field">
+        <label class="label">Lösungsraum auf Blatt</label>
+        <div class="niveau-row">
+          <button class="niveau-btn active" id="space-klein" onclick="setSpace('klein')">Klein</button>
+          <button class="niveau-btn" id="space-mittel" onclick="setSpace('mittel')">Mittel</button>
+          <button class="niveau-btn" id="space-gross" onclick="setSpace('gross')">Gross</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Generate -->
+    <button class="gen-btn ready" id="gen-btn" onclick="generate()">
+      <span>✦</span> Aufgabenblätter generieren
+    </button>
+    <button class="gen-btn-secondary" onclick="generateDemo()">Demo ohne API-Key</button>
+
+  </div>
+
+  <!-- ── PREVIEW ── -->
+  <div class="preview-area" id="preview-area">
+    <div class="empty-state">
+      <div class="empty-icon">📄</div>
+      <div class="empty-title">Bereit zum Generieren</div>
+      <div class="empty-sub">Wähle Milestones, passe die Einstellungen an und klicke auf "Aufgabenblätter generieren".</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════════
+const MILESTONES = [
+  {id:"MS1.1",unit:"Zahl",title:"Grosse Zahlen",title_en:"Large Numbers",bloom:"Verstehen",niveau:1,prereqs:[]},
+  {id:"MS1.2",unit:"Zahl",title:"Runden & Schätzen",title_en:"Rounding",bloom:"Anwenden",niveau:1,prereqs:["MS1.1"]},
+  {id:"MS2.1",unit:"Zahl",title:"Addition & Subtraktion",title_en:"Addition & Subtraction",bloom:"Anwenden",niveau:1,prereqs:["MS1.1"]},
+  {id:"MS2.2",unit:"Zahl",title:"Multiplikation",title_en:"Multiplication",bloom:"Anwenden",niveau:1,prereqs:["MS2.1"]},
+  {id:"MS2.3",unit:"Zahl",title:"Division",title_en:"Division",bloom:"Anwenden",niveau:1,prereqs:["MS2.2"]},
+  {id:"MS3.1",unit:"Brüche",title:"Bruchbegriff",title_en:"Fraction Concept",bloom:"Verstehen",niveau:1,prereqs:[]},
+  {id:"MS3.2",unit:"Brüche",title:"Brüche vergleichen",title_en:"Comparing Fractions",bloom:"Anwenden",niveau:1,prereqs:["MS3.1"]},
+  {id:"MS3.3",unit:"Brüche",title:"Kürzen & Erweitern",title_en:"Simplifying",bloom:"Anwenden",niveau:1,prereqs:["MS3.2"]},
+  {id:"MS3.4",unit:"Brüche",title:"Addition (gl. Nenner)",title_en:"Addition (like denom.)",bloom:"Anwenden",niveau:1,prereqs:["MS3.3"]},
+  {id:"MS3.5",unit:"Brüche",title:"Addition (versch. N.)",title_en:"Addition (unlike)",bloom:"Analysieren",niveau:2,prereqs:["MS3.4"]},
+  {id:"MS4.1",unit:"Dezimal",title:"Dezimalzahlen",title_en:"Decimals",bloom:"Verstehen",niveau:1,prereqs:["MS1.1"]},
+  {id:"MS4.2",unit:"Dezimal",title:"Rechnen Dezimal",title_en:"Computing Decimals",bloom:"Anwenden",niveau:1,prereqs:["MS4.1"]},
+  {id:"MS6.1",unit:"Geo",title:"Umfang",title_en:"Perimeter",bloom:"Anwenden",niveau:1,prereqs:[]},
+  {id:"MS6.2",unit:"Geo",title:"Flächeninhalt",title_en:"Area",bloom:"Anwenden",niveau:1,prereqs:["MS6.1"]},
+  {id:"MS12.1",unit:"Daten",title:"Daten erheben",title_en:"Collecting Data",bloom:"Anwenden",niveau:1,prereqs:[]},
+  {id:"MS12.2",unit:"Daten",title:"Diagramme",title_en:"Diagrams",bloom:"Anwenden",niveau:1,prereqs:["MS12.1"]},
+];
+
+const STUDENTS = [
+  {id:"s01",name:"Lena Müller",avatar:"LM",color:"#0F6E56",lang:"DE",milestones:{MS1_1:2,MS1_2:2,MS2_1:2,MS3_1:2,MS3_2:2,MS3_3:1,MS3_4:0,MS4_1:2,MS6_1:2,MS6_2:1}},
+  {id:"s02",name:"Noah Fischer",avatar:"NF",color:"#534AB7",lang:"EN",milestones:{MS1_1:2,MS1_2:2,MS2_1:2,MS3_1:2,MS3_2:-1,MS3_3:0,MS4_1:2,MS4_2:2,MS6_1:2,MS6_2:2}},
+  {id:"s03",name:"Sofia Chen",avatar:"SC",color:"#993C1D",lang:"bilingual",milestones:{MS1_1:3,MS1_2:3,MS2_1:3,MS2_2:3,MS3_1:3,MS3_2:3,MS3_3:3,MS3_4:2,MS3_5:1,MS4_1:3,MS6_1:3,MS6_2:2}},
+  {id:"s04",name:"Max Brunner",avatar:"MB",color:"#854F0B",lang:"DE",milestones:{MS1_1:2,MS1_2:1,MS2_1:1,MS3_1:1,MS6_1:1}},
+  {id:"s05",name:"Emma Schneider",avatar:"ES",color:"#185FA5",lang:"EN",milestones:{MS1_1:2,MS1_2:2,MS2_1:2,MS2_2:2,MS3_1:2,MS3_2:2,MS3_3:2,MS3_4:2,MS4_1:2,MS6_1:2,MS6_2:2}},
+  {id:"s06",name:"Luca Bianchi",avatar:"LB",color:"#3B6D11",lang:"bilingual",milestones:{MS1_1:2,MS1_2:2,MS2_1:2,MS3_1:2,MS3_2:2,MS3_3:2,MS3_4:1,MS4_1:2,MS6_1:2,MS6_2:2}},
+  {id:"s07",name:"Mia Keller",avatar:"MK",color:"#7F77DD",lang:"DE",milestones:{MS1_1:2,MS1_2:-1,MS2_1:1,MS3_1:2,MS3_2:1,MS4_1:2,MS6_1:2,MS6_2:1}},
+  {id:"s08",name:"Ben Taylor",avatar:"BT",color:"#D85A30",lang:"EN",milestones:{MS1_1:2,MS1_2:2,MS2_1:2,MS2_2:2,MS2_3:2,MS3_1:2,MS3_2:2,MS3_3:2,MS3_4:2,MS3_5:2,MS4_1:2,MS6_1:2,MS6_2:2}},
+  {id:"s09",name:"Hannah Weber",avatar:"HW",color:"#0C447C",lang:"bilingual",milestones:{MS1_1:2,MS1_2:2,MS2_1:2,MS3_1:2,MS3_2:2,MS3_3:1,MS4_1:2,MS6_1:2,MS6_2:2}},
+  {id:"s10",name:"Jonas Zimmermann",avatar:"JZ",color:"#533489",lang:"DE",milestones:{MS1_1:2,MS1_2:2,MS2_1:2,MS2_2:2,MS3_1:2,MS3_2:2,MS3_3:2,MS3_4:2,MS3_5:1,MS4_1:2,MS6_1:2,MS6_2:2}},
+  {id:"s11",name:"Yasmin Özdemir",avatar:"YO",color:"#639922",lang:"bilingual",milestones:{MS1_1:2,MS1_2:2,MS2_1:1,MS3_1:2,MS3_2:2,MS3_3:1,MS4_1:2,MS6_1:2,MS6_2:1}},
+  {id:"s12",name:"Oliver Meier",avatar:"OM",color:"#5DCAA5",lang:"EN",milestones:{MS1_1:2,MS1_2:2,MS2_1:2,MS2_2:2,MS3_1:2,MS3_2:2,MS3_3:2,MS3_4:2,MS4_1:2,MS6_1:2,MS6_2:2}},
+];
+
+// ═══════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════
+let state = {
+  mode: 'klasse',
+  lang: 'DE',
+  niveau: 1,
+  space: 'klein',
+  selectedStudents: new Set(STUDENTS.map(s=>s.id)),
+  selectedMs: new Set(['MS3.4']),
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+function init() {
+  // Date
+  const today = new Date();
+  document.getElementById('inp-datum').value = today.toISOString().split('T')[0];
+
+  // Students
+  const grid = document.getElementById('student-grid');
+  grid.innerHTML = STUDENTS.map(s => `
+    <div class="s-chip selected" id="chip-${s.id}" onclick="toggleStudent('${s.id}')">
+      <div class="avatar" style="background:${s.color}">${s.avatar}</div>
+      ${s.name.split(' ')[0]}
+    </div>`).join('');
+
+  // Milestones
+  const units = [...new Set(MILESTONES.map(m=>m.unit))];
+  const msGrid = document.getElementById('ms-grid');
+  msGrid.innerHTML = units.map(unit => {
+    const ms = MILESTONES.filter(m=>m.unit===unit);
+    return `<div style="width:100%;margin-bottom:4px;">
+      <div style="font-size:10px;color:var(--gray-m);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">${unit}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;">
+        ${ms.map(m=>`<div class="ms-pill ${state.selectedMs.has(m.id)?'selected':''}" id="mspill-${m.id}" onclick="toggleMs('${m.id}')">${m.id}</div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CONTROLS
+// ═══════════════════════════════════════════════════════════════════
+function setMode(m) {
+  state.mode = m;
+  document.getElementById('mode-klasse').classList.toggle('active', m==='klasse');
+  document.getElementById('mode-individuell').classList.toggle('active', m==='individuell');
+  document.getElementById('sec-schueler').style.display = m==='individuell' ? 'block' : 'none';
+}
+
+function setLang(l) {
+  state.lang = l;
+  ['DE','EN','bilingual'].forEach(x => document.getElementById('lang-'+x.toLowerCase()).classList.toggle('active', x===l));
+  // fix bilingual id
+  document.getElementById('lang-de').classList.toggle('active', l==='DE');
+  document.getElementById('lang-en').classList.toggle('active', l==='EN');
+  document.getElementById('lang-bi').classList.toggle('active', l==='bilingual');
+}
+
+function setNiveau(n) {
+  state.niveau = n;
+  [1,2,3,'mix'].forEach(x => document.getElementById('niv-'+x).classList.toggle('active', x===n));
+}
+
+function setSpace(s) {
+  state.space = s;
+  ['klein','mittel','gross'].forEach(x => document.getElementById('space-'+x).classList.toggle('active', x===s));
+}
+
+function toggleStudent(id) {
+  if(state.selectedStudents.has(id)) state.selectedStudents.delete(id);
+  else state.selectedStudents.add(id);
+  document.getElementById('chip-'+id).classList.toggle('selected', state.selectedStudents.has(id));
+}
+
+function selectAll() { STUDENTS.forEach(s=>{state.selectedStudents.add(s.id);document.getElementById('chip-'+s.id).classList.add('selected');}); }
+function selectNone() { STUDENTS.forEach(s=>{state.selectedStudents.delete(s.id);document.getElementById('chip-'+s.id).classList.remove('selected');}); }
+function selectGaps() {
+  selectNone();
+  STUDENTS.filter(s=>Object.values(s.milestones).some(v=>v===-1)).forEach(s=>{
+    state.selectedStudents.add(s.id);
+    document.getElementById('chip-'+s.id).classList.add('selected');
+  });
+}
+
+function toggleMs(id) {
+  if(state.selectedMs.has(id)) state.selectedMs.delete(id);
+  else state.selectedMs.add(id);
+  document.getElementById('mspill-'+id).classList.toggle('selected', state.selectedMs.has(id));
+}
+
+function autoSelectMs() {
+  state.selectedMs.clear();
+  document.querySelectorAll('.ms-pill').forEach(el=>el.classList.remove('selected'));
+  // Pick milestones where most students are in-progress or have gaps
+  MILESTONES.forEach(m => {
+    const k = m.id.replace('.','_');
+    const relevant = STUDENTS.filter(s=>[1,-1].includes(s.milestones[k]||0)).length;
+    if(relevant >= 3) {
+      state.selectedMs.add(m.id);
+      const el = document.getElementById('mspill-'+m.id);
+      if(el) el.classList.add('selected');
+    }
+  });
+  if(state.selectedMs.size===0) { toggleMs('MS3.4'); }
+}
+
+function clearMs() {
+  state.selectedMs.clear();
+  document.querySelectorAll('.ms-pill').forEach(el=>el.classList.remove('selected'));
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// GENERATE
+// ═══════════════════════════════════════════════════════════════════
+async function generate() {
+  if(state.selectedMs.size === 0) { alert('Bitte mindestens einen Milestone auswählen.'); return; }
+
+  const btn = document.getElementById('gen-btn');
+  btn.className = 'gen-btn loading';
+  btn.innerHTML = '<div class="spinner"></div> Generiere Aufgaben…';
+
+  const area = document.getElementById('preview-area');
+  area.innerHTML = '<div class="loadbar"></div><div style="text-align:center;padding:40px;color:var(--gray-m);font-size:13px;">✦ Claude generiert personalisierte Aufgaben…</div>';
+
+  const students = state.mode === 'individuell'
+    ? STUDENTS.filter(s => state.selectedStudents.has(s.id))
+    : [null]; // null = class sheet
+
+  const selectedMsList = MILESTONES.filter(m => state.selectedMs.has(m.id));
+  const anzahl = parseInt(document.getElementById('inp-anzahl').value);
+  const kontext = document.getElementById('inp-kontext').value.trim();
+  const datum = document.getElementById('inp-datum').value;
+
+  try {
+    const sheets = [];
+    for(const student of students) {
+      const sheet = await generateSheet(student, selectedMsList, anzahl, kontext, datum);
+      sheets.push(sheet);
+    }
+    renderSheets(sheets, datum);
+  } catch(e) {
+    generateDemo();
+  }
+
+  btn.className = 'gen-btn ready';
+  btn.innerHTML = '<span>✦</span> Aufgabenblätter generieren';
+}
+
+async function generateSheet(student, msList, anzahl, kontext, datum) {
+  const isEN = student ? student.lang === 'EN' : state.lang === 'EN';
+  const isBi = student ? student.lang === 'bilingual' : state.lang === 'bilingual';
+  const langLabel = isBi ? 'bilingual (German and English mixed naturally)' : isEN ? 'English' : 'German (Deutsch)';
+
+  // Determine niveau per student
+  let niveauNote = '';
+  if(student) {
+    const gaps = msList.filter(m => (student.milestones[m.id.replace('.','_')]||0) === -1);
+    const advanced = msList.every(m => (student.milestones[m.id.replace('.','_')]||0) >= 2);
+    if(gaps.length > 0) niveauNote = `This student has GAPS in: ${gaps.map(m=>m.id).join(', ')}. Start remedially, rebuild from scratch, be extra encouraging.`;
+    else if(advanced) niveauNote = `This student has MASTERED all selected milestones. Push to the next level with ★★★ challenge tasks.`;
+    else niveauNote = `Standard level ★★ tasks appropriate.`;
+  } else {
+    niveauNote = `Create tasks at niveau ${state.niveau === 'mix' ? 'mixed (some ★, some ★★, one ★★★)' : '★'.repeat(state.niveau)}.`;
+  }
+
+  const prompt = `You are an expert primary school math teacher at SIS Swiss International School (bilingual, LP21 curriculum, grade 5/6).
+
+Create EXACTLY ${anzahl} math tasks for a worksheet.
+${student ? `Student: ${student.name} (${student.lang})` : 'This is a CLASS worksheet for all students.'}
+Language: ${langLabel}
+Milestones to cover: ${msList.map(m=>`${m.id} "${m.title}" (Bloom: ${m.bloom})`).join(', ')}
+${niveauNote}
+${kontext ? `Real-world context/theme to use: "${kontext}"` : 'Use varied, age-appropriate real-world contexts (food, sports, nature, school life, travel).'}
+
+Rules:
+- Each task must clearly test one specific milestone
+- Use engaging, concrete real-world scenarios
+- Age-appropriate for grade 5/6 (10-12 year olds)
+- Tasks should have a clear, unambiguous single answer
+- Include one short context sentence per task
+
+Respond ONLY with this JSON (no markdown, no extra text):
+{
+  "tasks": [
+    {
+      "milestone_id": "MS3.4",
+      "context": "Short 1-sentence scenario",
+      "question": "The actual task question",
+      "solution": "The answer",
+      "bloom": "Anwenden",
+      "niveau": 1
+    }
+  ]
+}`;
+
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1500,
+      messages: [{role: "user", content: prompt}]
+    })
+  });
+  const data = await resp.json();
+  const raw = data.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
+  return {student, tasks: JSON.parse(raw).tasks, datum};
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DEMO
+// ═══════════════════════════════════════════════════════════════════
+function generateDemo() {
+  const btn = document.getElementById('gen-btn');
+  btn.className = 'gen-btn ready';
+  btn.innerHTML = '<span>✦</span> Aufgabenblätter generieren';
+
+  const datum = document.getElementById('inp-datum').value || new Date().toISOString().split('T')[0];
+  const students = state.mode === 'individuell'
+    ? STUDENTS.filter(s => state.selectedStudents.has(s.id)).slice(0,3)
+    : [null];
+
+  const demoTasks = [
+    {milestone_id:"MS3.4",context:"Beim Schulessen gibt es heute Pizza.",question:"Lena isst 2/8 der Pizza. Ihr Bruder isst 3/8. Wie viel haben sie zusammen gegessen?",solution:"5/8",bloom:"Anwenden",niveau:1},
+    {milestone_id:"MS3.3",context:"Im Kunstunterricht malen die Kinder bunte Streifen.",question:"Kürze den Bruch 6/8 so weit wie möglich.",solution:"3/4",bloom:"Anwenden",niveau:1},
+    {milestone_id:"MS1.2",context:"Am Schulfest werden Lose verkauft.",question:"4'738 Lose wurden gedruckt. Runde auf die nächste Hunderterzahl.",solution:"4'700",bloom:"Anwenden",niveau:1},
+    {milestone_id:"MS6.2",context:"Der Schulhof soll neu gestrichen werden.",question:"Ein rechteckiges Spielfeld ist 24 m lang und 15 m breit. Wie gross ist seine Fläche?",solution:"360 m²",bloom:"Anwenden",niveau:1},
+  ];
+
+  const demoTasksEN = [
+    {milestone_id:"MS3.4",context:"It's pizza day at school!",question:"Max has eaten 3/8 of his pizza. He eats 2/8 more. How much has he eaten in total?",solution:"5/8",bloom:"Anwenden",niveau:1},
+    {milestone_id:"MS3.2",context:"The class is comparing their reading progress.",question:"Order these fractions from smallest to largest: 3/4, 1/2, 2/3",solution:"1/2, 2/3, 3/4",bloom:"Anwenden",niveau:1},
+    {milestone_id:"MS4.2",context:"At the school shop, pencils cost CHF 1.35 each.",question:"How much do 4 pencils cost?",solution:"CHF 5.40",bloom:"Anwenden",niveau:1},
+    {milestone_id:"MS6.1",context:"The garden needs a new fence.",question:"A rectangular garden is 12 m long and 8 m wide. What is the perimeter?",solution:"40 m",bloom:"Anwenden",niveau:1},
+  ];
+
+  const sheets = students.map(student => ({
+    student,
+    tasks: student?.lang === 'EN' ? demoTasksEN.slice(0,parseInt(document.getElementById('inp-anzahl').value)||4)
+                                   : demoTasks.slice(0,parseInt(document.getElementById('inp-anzahl').value)||4),
+    datum,
+    isDemo: true
+  }));
+
+  renderSheets(sheets, datum);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════════
+function bloomClass(b) {
+  return 'bloom-'+(b||'anwenden').toLowerCase().replace('ü','u');
+}
+
+function niveauLabel(n) {
+  return n===3?'★★★':n===2?'★★':'★';
+}
+
+function spaceHeight() {
+  return {klein:'44px', mittel:'72px', gross:'100px'}[state.space] || '44px';
+}
+
+function renderSheets(sheets, datum) {
+  const dateStr = datum ? new Date(datum).toLocaleDateString('de-CH', {day:'2-digit',month:'long',year:'numeric'}) : '';
+  const area = document.getElementById('preview-area');
+
+  area.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div>
+        <div style="font-family:var(--serif);font-size:18px;">${sheets.length} Aufgabenblatt${sheets.length>1?'er':''} generiert</div>
+        <div style="font-size:12px;color:var(--gray-m);margin-top:2px;">${dateStr}</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="action-btn" onclick="window.print()">Drucken</button>
+        <button class="action-btn primary" onclick="exportAll()">Alle als PDF</button>
+      </div>
+    </div>
+    <div class="preview-stack" id="sheets-container"></div>`;
+
+  const container = document.getElementById('sheets-container');
+  sheets.forEach((sheet, idx) => {
+    const s = sheet.student;
+    const isEN = s ? s.lang === 'EN' : state.lang === 'EN';
+    const isBi = s ? s.lang === 'bilingual' : state.lang === 'bilingual';
+
+    const niveauOfSheet = sheet.tasks.length > 0 ? Math.max(...sheet.tasks.map(t=>t.niveau||1)) : 1;
+    const msIds = [...new Set(sheet.tasks.map(t=>t.milestone_id))];
+
+    const el = document.createElement('div');
+    el.className = 'sheet';
+    el.style.animationDelay = (idx * 0.08) + 's';
+    el.innerHTML = `
+      <div class="sheet-inner">
+        ${sheet.isDemo ? `<div style="background:#FAEEDA;border:1px solid #EF9F27;border-radius:6px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:#854F0B;">Demo-Modus — mit API-Key werden Aufgaben individuell für jeden Schüler generiert.</div>` : ''}
+        <div class="sheet-header">
+          <div>
+            <div class="sheet-school">SIS Swiss International School</div>
+            <div class="sheet-title">Mathematik ${isEN?'/ Mathematics':''} · Klasse 5b</div>
+            <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
+              ${msIds.map(id=>`<span style="font-size:10px;background:var(--purple-l);color:var(--purple);padding:2px 7px;border-radius:10px;font-family:var(--mono);">${id}</span>`).join('')}
+              <span class="sheet-level-badge niveau-${niveauOfSheet}">${niveauLabel(niveauOfSheet)}</span>
+            </div>
+          </div>
+          <div class="sheet-meta">
+            <div class="sheet-name">${s ? s.name : 'Klasse 5b'}</div>
+            <div class="sheet-date">${dateStr}</div>
+            <div style="font-size:10px;color:var(--gray-m);margin-top:4px;">Unterschrift: ________________</div>
+          </div>
+        </div>
+
+        <div class="sheet-infobar">
+          <span>📝 ${sheet.tasks.length} Aufgaben</span>
+          <span>⏱ ca. ${sheet.tasks.length * 4}–${sheet.tasks.length * 6} Min.</span>
+          <span>${isEN?'🇬🇧 English':isBi?'🌐 Bilingual':'🇩🇪 Deutsch'}</span>
+          ${s && Object.values(s.milestones||{}).some(v=>v===-1) ? '<span style="color:var(--coral)">⚠ Förderblatt</span>' : ''}
+        </div>
+
+        <div id="tasks-${idx}">
+          ${sheet.tasks.map((task, ti) => `
+            <div class="task-item">
+              <div class="task-header">
+                <div class="task-num">${ti+1}</div>
+                <div style="flex:1;">
+                  <div class="task-context">${task.context}</div>
+                  <div class="task-question">${task.question}</div>
+                  <div style="margin-top:6px;display:flex;gap:6px;align-items:center;">
+                    <span class="task-bloom ${bloomClass(task.bloom)}">${task.bloom}</span>
+                    <span style="font-size:10px;color:var(--amber);">${niveauLabel(task.niveau||1)}</span>
+                  </div>
+                </div>
+                <span class="task-ms">${task.milestone_id}</span>
+              </div>
+              <div class="task-space" style="height:${spaceHeight()};"></div>
+            </div>`).join('')}
+        </div>
+
+        <div class="sheet-footer">
+          <span>SIS AI Learning · Mathematik Klasse 5b · ${dateStr}</span>
+          <span style="font-family:var(--mono);font-size:9px;opacity:.5;">${s?s.id:'class'}-${Date.now().toString(36).slice(-4)}</span>
+        </div>
+      </div>
+      <div class="sheet-actions">
+        <button class="action-btn" onclick="printSheet(${idx})">🖨 Drucken</button>
+        <button class="action-btn" onclick="toggleSolutions(${idx})">👁 Lösung anzeigen</button>
+        <div id="solutions-${idx}" style="display:none;margin-left:auto;font-size:11px;color:var(--gray-m);">
+          ${sheet.tasks.map((t,i)=>`${i+1}. <strong>${t.solution}</strong>`).join(' &nbsp;·&nbsp; ')}
+        </div>
+      </div>`;
+
+    container.appendChild(el);
+  });
+}
+
+function toggleSolutions(idx) {
+  const el = document.getElementById('solutions-'+idx);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function printSheet(idx) { window.print(); }
+function exportAll() { window.print(); }
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>

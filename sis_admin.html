@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIS Admin — Organisationsverwaltung</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --teal:#0F6E56;--teal-m:#1D9E75;--teal-l:#E1F5EE;--teal-d:#085041;
+  --purple:#534AB7;--purple-l:#EEEDFE;
+  --coral:#993C1D;--coral-l:#FAECE7;
+  --amber:#854F0B;--amber-l:#FAEEDA;
+  --gray:#2C2C2A;--gray-m:#73726C;--gray-l:#F1EFE8;--gray-ll:#F8F7F2;
+  --green:#3B6D11;--green-l:#EAF3DE;
+  --red:#A32D2D;--red-l:#FCEBEB;
+  --border:#E0DED6;--surface:#fff;
+  --r:12px;--rs:8px;
+  --serif:'DM Serif Display',Georgia,serif;
+  --sans:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--sans);background:var(--gray-ll);color:var(--gray);font-size:14px;}
+
+.topbar{background:var(--teal-d);color:#fff;height:52px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-brand{display:flex;align-items:center;gap:10px;}
+.topbar-logo{font-family:var(--serif);font-size:17px;}
+.topbar-sep{width:1px;height:18px;background:rgba(255,255,255,.2);}
+.topbar-page{font-size:12px;opacity:.65;}
+.role-badge{font-size:11px;background:rgba(255,255,255,.15);padding:3px 10px;border-radius:20px;}
+
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 52px);}
+
+/* Sidebar */
+.sidebar{background:var(--teal-d);color:#fff;padding:12px 8px;}
+.nav-sec{font-size:9px;opacity:.45;letter-spacing:.08em;text-transform:uppercase;padding:10px 10px 4px;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:12px;color:rgba(255,255,255,.75);transition:background .15s;margin-bottom:1px;}
+.nav-item:hover{background:rgba(255,255,255,.1);}
+.nav-item.active{background:rgba(255,255,255,.18);color:#fff;font-weight:500;}
+.nav-item .ic{font-size:14px;width:18px;text-align:center;}
+.nav-badge{margin-left:auto;background:var(--coral);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;}
+
+/* Main */
+.main{overflow-y:auto;}
+.main-header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;}
+.main-title{font-family:var(--serif);font-size:20px;}
+.main-sub{font-size:11px;color:var(--gray-m);margin-top:2px;}
+.content{padding:22px;}
+
+/* Cards & Grid */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px;}
+.card-title{font-size:11px;font-weight:600;color:var(--gray-m);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;}
+.stat-val{font-size:28px;font-weight:700;font-family:var(--serif);}
+.stat-label{font-size:11px;color:var(--gray-m);margin-top:1px;}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--rs);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:var(--sans);}
+.btn-teal{background:var(--teal);color:#fff;} .btn-teal:hover{background:var(--teal-m);}
+.btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--gray);} .btn-ghost:hover{border-color:var(--teal);color:var(--teal);}
+.btn-red{background:var(--red-l);color:var(--red);border:1.5px solid var(--red-l);} .btn-red:hover{background:var(--red);color:#fff;}
+.btn-sm{padding:5px 12px;font-size:12px;}
+
+/* Forms */
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--gray-m);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.inp,.sel,.ta{width:100%;border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-size:13px;font-family:var(--sans);color:var(--gray);background:#fff;transition:border .15s;outline:none;}
+.inp:focus,.sel:focus,.ta:focus{border-color:var(--teal);}
+.ta{resize:vertical;min-height:70px;line-height:1.5;}
+
+/* Pills */
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500;}
+.pill-teal{background:var(--teal-l);color:var(--teal);}
+.pill-purple{background:var(--purple-l);color:var(--purple);}
+.pill-coral{background:var(--coral-l);color:var(--coral);}
+.pill-amber{background:var(--amber-l);color:var(--amber);}
+.pill-green{background:var(--green-l);color:var(--green);}
+.pill-gray{background:var(--gray-l);color:var(--gray-m);}
+.pill-red{background:var(--red-l);color:var(--red);}
+
+/* Tables */
+.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.tbl th{background:var(--gray-l);padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--gray-m);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--gray-ll);}
+
+/* Tree view */
+.tree-node{border-left:2px solid var(--border);margin-left:16px;padding-left:16px;margin-bottom:4px;}
+.tree-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--rs);background:var(--surface);border:1px solid var(--border);margin-bottom:6px;transition:all .15s;}
+.tree-item:hover{border-color:var(--teal);}
+.tree-icon{font-size:16px;width:24px;text-align:center;flex-shrink:0;}
+.tree-label{font-weight:500;font-size:13px;flex:1;}
+.tree-meta{font-size:11px;color:var(--gray-m);}
+.tree-actions{display:flex;gap:6px;opacity:0;transition:opacity .15s;}
+.tree-item:hover .tree-actions{opacity:1;}
+
+/* Lang chips */
+.lang-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;}
+.lang-chip{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid var(--border);background:#fff;color:var(--gray-m);transition:all .15s;user-select:none;}
+.lang-chip.on{border-color:var(--purple);background:var(--purple-l);color:var(--purple);}
+
+/* Modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:#fff;border-radius:var(--r);padding:28px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.modal-title{font-family:var(--serif);font-size:20px;margin-bottom:6px;}
+.modal-sub{font-size:12px;color:var(--gray-m);margin-bottom:20px;}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
+
+/* SQL viewer */
+.sql-block{background:#1a1a18;color:#e8e6df;border-radius:var(--r);padding:20px;font-family:var(--mono);font-size:12px;line-height:1.7;overflow-x:auto;white-space:pre;}
+.sql-kw{color:#5DCAA5;}
+.sql-type{color:#AFA9EC;}
+.sql-str{color:#FAC775;}
+.sql-comment{color:#5F5E5A;}
+
+/* Alerts */
+.alert{border-radius:var(--rs);padding:10px 14px;font-size:13px;margin-bottom:8px;border-left:3px solid;}
+.alert-teal{background:var(--teal-l);color:var(--teal);border-color:var(--teal);}
+.alert-amber{background:var(--amber-l);color:var(--amber);border-color:var(--amber);}
+
+/* Progress */
+.progress-bar{background:var(--gray-l);border-radius:4px;height:6px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:4px;transition:width .5s;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.fade-up{animation:fadeUp .25s ease both;}
+
+/* Tabs */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.tab{padding:8px 16px;cursor:pointer;font-size:13px;color:var(--gray-m);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+.tab:hover{color:var(--gray);}
+.tab.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:500;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo">SIS AI Learning</div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-page">Admin — Organisationsverwaltung</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="role-badge">Super-Admin</span>
+    <span style="font-size:12px;opacity:.65;">admin@sis.ch</span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="nav-sec">Organisation</div>
+    <div class="nav-item active" id="nav-overview" onclick="showView('overview')"><span class="ic">🏛</span>Übersicht</div>
+    <div class="nav-item" id="nav-laender" onclick="showView('laender')"><span class="ic">🌍</span>Länder</div>
+    <div class="nav-item" id="nav-schulen" onclick="showView('schulen')"><span class="ic">🏫</span>Schulen</div>
+    <div class="nav-item" id="nav-klassen" onclick="showView('klassen')"><span class="ic">📚</span>Klassen & Fächer</div>
+
+    <div class="nav-sec">Personen</div>
+    <div class="nav-item" id="nav-schueler" onclick="showView('schueler')"><span class="ic">👥</span>Schüler-Dossiers</div>
+    <div class="nav-item" id="nav-lehrpersonen" onclick="showView('lehrpersonen')"><span class="ic">👩‍🏫</span>Lehrpersonen</div>
+    <div class="nav-item" id="nav-admins" onclick="showView('admins')"><span class="ic">🔑</span>Admins & Rollen</div>
+
+    <div class="nav-sec">System</div>
+    <div class="nav-item" id="nav-curriculum" onclick="showView('curriculum')"><span class="ic">📋</span>Curricula</div>
+    <div class="nav-item" id="nav-schema" onclick="showView('schema')"><span class="ic">🗄</span>SQL-Schema</div>
+    <div class="nav-item" id="nav-datenschutz" onclick="showView('datenschutz')"><span class="ic">🔒</span>Datenschutz</div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="main-header">
+      <div>
+        <div class="main-title" id="view-title">Übersicht</div>
+        <div class="main-sub" id="view-sub">SIS Swiss International School — Globale Verwaltung</div>
+      </div>
+      <div id="view-actions"></div>
+    </div>
+    <div class="content" id="view-content"></div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// DATA MODEL (simulated — replaces Supabase in demo)
+// ═══════════════════════════════════════════════════════
+const DB = {
+  organisation: {
+    id:'org_sis', name:'SIS Swiss International School',
+    website:'www.sis-education.com', founded:1999,
+    contact:'info@sis-education.com'
+  },
+  laender: [
+    {id:'ch', name:'Schweiz', iso:'CH', flag:'🇨🇭',
+     sprachen:['DE','EN','FR'], lehrplan:'LP21',
+     notensystem:'1-6', timezone:'Europe/Zurich',
+     schulen:['sch_bs','sch_zh','sch_be']},
+    {id:'de', name:'Deutschland', iso:'DE', flag:'🇩🇪',
+     sprachen:['DE','EN'], lehrplan:'KMK',
+     notensystem:'1-6', timezone:'Europe/Berlin',
+     schulen:['sch_mu','sch_ha']},
+    {id:'at', name:'Österreich', iso:'AT', flag:'🇦🇹',
+     sprachen:['DE','EN'], lehrplan:'AHS',
+     notensystem:'1-5', timezone:'Europe/Vienna',
+     schulen:['sch_wi']},
+    {id:'uk', name:'United Kingdom', iso:'GB', flag:'🇬🇧',
+     sprachen:['EN'], lehrplan:'UK National Curriculum',
+     notensystem:'A-F', timezone:'Europe/London',
+     schulen:['sch_lo']},
+  ],
+  schulen: [
+    {id:'sch_bs',landId:'ch',name:'SIS Basel',city:'Basel',students:320,klassen:14},
+    {id:'sch_zh',landId:'ch',name:'SIS Zürich',city:'Zürich',students:410,klassen:18},
+    {id:'sch_be',landId:'ch',name:'SIS Bern',city:'Bern',students:280,klassen:12},
+    {id:'sch_mu',landId:'de',name:'SIS München',city:'München',students:350,klassen:15},
+    {id:'sch_ha',landId:'de',name:'SIS Hamburg',city:'Hamburg',students:290,klassen:12},
+    {id:'sch_wi',landId:'at',name:'SIS Wien',city:'Wien',students:260,klassen:11},
+    {id:'sch_lo',landId:'uk',name:'SIS London',city:'London',students:380,klassen:16},
+  ],
+  klassen: [
+    {id:'kl_zh_5b',schuleId:'sch_zh',name:'5b',stufe:5,schuljahr:'2025/26',faecher:['Mathematik','Deutsch','Englisch'],lehrpersonIds:['lp_01','lp_02'],schuelerCount:22},
+    {id:'kl_zh_5a',schuleId:'sch_zh',name:'5a',stufe:5,schuljahr:'2025/26',faecher:['Mathematik','Deutsch','Englisch'],lehrpersonIds:['lp_01'],schuelerCount:24},
+    {id:'kl_zh_6a',schuleId:'sch_zh',name:'6a',stufe:6,schuljahr:'2025/26',faecher:['Mathematik','Deutsch','Englisch','Französisch'],lehrpersonIds:['lp_03'],schuelerCount:21},
+    {id:'kl_bs_5a',schuleId:'sch_bs',name:'5a',stufe:5,schuljahr:'2025/26',faecher:['Mathematik','Deutsch','Englisch'],lehrpersonIds:['lp_04'],schuelerCount:20},
+  ],
+  lehrpersonen: [
+    {id:'lp_01',name:'Sandra Meier',email:'s.meier@sis.ch',schuleId:'sch_zh',faecher:['Mathematik'],klassen:['kl_zh_5a','kl_zh_5b']},
+    {id:'lp_02',name:'Thomas Brunner',email:'t.brunner@sis.ch',schuleId:'sch_zh',faecher:['Deutsch','Englisch'],klassen:['kl_zh_5b']},
+    {id:'lp_03',name:'Marie Dupont',email:'m.dupont@sis.ch',schuleId:'sch_zh',faecher:['Mathematik','Französisch'],klassen:['kl_zh_6a']},
+    {id:'lp_04',name:'Peter Keller',email:'p.keller@sis.ch',schuleId:'sch_bs',faecher:['Mathematik','Deutsch'],klassen:['kl_bs_5a']},
+  ],
+  faecher_pool: ['Mathematik','Deutsch','Englisch','Französisch','Naturwissenschaften','Geschichte','Geografie','Musik','Sport','Kunst','Informatik'],
+  rollen: ['super_admin','laender_admin','schulleitung','lehrperson','schueler','eltern'],
+};
+
+const LANG_LABELS = {DE:'Deutsch',EN:'English',FR:'Français',IT:'Italiano'};
+const ALL_LANGS = ['DE','EN','FR','IT','ES','ZH'];
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+function showView(v){
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  const el=document.getElementById('nav-'+v);if(el)el.classList.add('active');
+  document.getElementById('view-actions').innerHTML='';
+  const views={
+    overview:['Übersicht','Globale Kennzahlen'],
+    laender:['Länder','Spracheinstellungen & Lehrpläne'],
+    schulen:['Schulen','Alle Standorte der Organisation'],
+    klassen:['Klassen & Fächer','Klassenverwaltung & Fächerzuweisung'],
+    schueler:['Schüler-Dossiers','Alle Schülerinnen & Schüler'],
+    lehrpersonen:['Lehrpersonen','Zuweisung zu Schulen & Klassen'],
+    admins:['Admins & Rollen','Zugriffsrechte & Rollenverwaltung'],
+    curriculum:['Curricula','Lernziele & Milestones pro Fach'],
+    schema:['SQL-Schema','Datenbankstruktur für Entwickler'],
+    datenschutz:['Datenschutz','DSGVO / DSG Compliance'],
+  };
+  const [title,sub]=views[v]||['Admin',''];
+  document.getElementById('view-title').textContent=title;
+  document.getElementById('view-sub').textContent=sub;
+  const renders={overview:renderOverview,laender:renderLaender,schulen:renderSchulen,klassen:renderKlassen,schueler:renderSchueler,lehrpersonen:renderLehrpersonen,admins:renderAdmins,curriculum:renderCurriculum,schema:renderSchema,datenschutz:renderDatenschutz};
+  if(renders[v])renders[v]();
+}
+
+// ═══════════════════════════════════════════════════════
+// OVERVIEW
+// ═══════════════════════════════════════════════════════
+function renderOverview(){
+  const totalSchueler=DB.schulen.reduce((a,s)=>a+s.students,0);
+  const totalKlassen=DB.schulen.reduce((a,s)=>a+s.klassen,0);
+  document.getElementById('view-content').innerHTML=`
+    <div class="g4" style="margin-bottom:16px;">
+      <div class="stat"><div class="stat-val" style="color:var(--teal)">${DB.laender.length}</div><div class="stat-label">Länder</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--purple)">${DB.schulen.length}</div><div class="stat-label">Schulen</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--coral)">${totalKlassen}</div><div class="stat-label">Klassen</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--amber)">${totalSchueler.toLocaleString()}</div><div class="stat-label">Schülerinnen & Schüler</div></div>
+    </div>
+
+    <div class="g2" style="margin-bottom:16px;">
+      <div class="card">
+        <div class="card-title">Organisationsstruktur</div>
+        ${renderOrgTree()}
+      </div>
+      <div class="card">
+        <div class="card-title">Länder & Sprachen</div>
+        ${DB.laender.map(l=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:20px;">${l.flag}</span>
+            <div style="flex:1;">
+              <div style="font-weight:500;font-size:13px;">${l.name}</div>
+              <div style="font-size:11px;color:var(--gray-m);">${l.lehrplan} · ${DB.schulen.filter(s=>s.landId===l.id).length} Schulen</div>
+            </div>
+            <div style="display:flex;gap:4px;">
+              ${l.sprachen.map(s=>`<span class="pill pill-purple" style="font-size:10px;">${s}</span>`).join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Schulen nach Land</div>
+      <table class="tbl">
+        <thead><tr><th>Schule</th><th>Land</th><th>Ort</th><th>Klassen</th><th>Schüler</th><th>Status</th><th></th></tr></thead>
+        <tbody>${DB.schulen.map(s=>{
+          const land=DB.laender.find(l=>l.id===s.landId);
+          return`<tr>
+            <td style="font-weight:500;">${s.name}</td>
+            <td>${land?.flag} ${land?.name}</td>
+            <td style="color:var(--gray-m);">${s.city}</td>
+            <td>${s.klassen}</td>
+            <td>${s.students.toLocaleString()}</td>
+            <td><span class="pill pill-green">Aktiv</span></td>
+            <td><button class="btn btn-ghost btn-sm" onclick="showView('klassen')">Klassen →</button></td>
+          </tr>`;}).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderOrgTree(){
+  return`<div style="font-size:13px;">
+    <div class="tree-item" style="background:var(--teal-l);border-color:var(--teal);">
+      <span class="tree-icon">🏛</span>
+      <div style="flex:1;"><div class="tree-label">${DB.organisation.name}</div><div class="tree-meta">Organisation · gegr. ${DB.organisation.founded}</div></div>
+    </div>
+    ${DB.laender.map(l=>`
+      <div class="tree-node">
+        <div class="tree-item">
+          <span class="tree-icon">${l.flag}</span>
+          <div style="flex:1;"><div class="tree-label">${l.name}</div><div class="tree-meta">${l.sprachen.join(', ')} · ${l.lehrplan}</div></div>
+          <div class="tree-actions"><button class="btn btn-ghost btn-sm" onclick="openLandModal('${l.id}')">Bearbeiten</button></div>
+        </div>
+        ${DB.schulen.filter(s=>s.landId===l.id).map(s=>`
+          <div class="tree-node">
+            <div class="tree-item">
+              <span class="tree-icon">🏫</span>
+              <div style="flex:1;"><div class="tree-label">${s.name}</div><div class="tree-meta">${s.city} · ${s.klassen} Klassen · ${s.students} SuS</div></div>
+              <div class="tree-actions"><button class="btn btn-ghost btn-sm" onclick="showView('klassen')">→</button></div>
+            </div>
+          </div>`).join('')}
+      </div>`).join('')}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// LÄNDER
+// ═══════════════════════════════════════════════════════
+function renderLaender(){
+  document.getElementById('view-actions').innerHTML=`<button class="btn btn-teal" onclick="openNewLandModal()">+ Land hinzufügen</button>`;
+  document.getElementById('view-content').innerHTML=`
+    <div class="alert alert-teal" style="margin-bottom:16px;">Sprachen werden auf Länderebene definiert. Alle Schulen, Klassen und Schüler in diesem Land erben die verfügbaren Sprachen.</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;">
+      ${DB.laender.map(l=>`
+        <div class="card fade-up" style="border-top:3px solid var(--teal);">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:32px;">${l.flag}</span>
+              <div><div style="font-size:16px;font-weight:600;">${l.name}</div>
+              <div style="font-size:11px;color:var(--gray-m);">${l.iso} · ${l.timezone}</div></div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="openLandModal('${l.id}')">Bearbeiten</button>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <div class="card-title">Sprachen</div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;">
+              ${l.sprachen.map(s=>`<span class="pill pill-purple">${s} — ${LANG_LABELS[s]||s}</span>`).join('')}
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;background:var(--gray-ll);border-radius:var(--rs);padding:10px 12px;">
+            <div><span style="color:var(--gray-m);">Lehrplan</span><div style="font-weight:500;">${l.lehrplan}</div></div>
+            <div><span style="color:var(--gray-m);">Notensystem</span><div style="font-weight:500;">${l.notensystem}</div></div>
+            <div><span style="color:var(--gray-m);">Schulen</span><div style="font-weight:500;">${DB.schulen.filter(s=>s.landId===l.id).length}</div></div>
+            <div><span style="color:var(--gray-m);">Schüler</span><div style="font-weight:500;">${DB.schulen.filter(s=>s.landId===l.id).reduce((a,s)=>a+s.students,0).toLocaleString()}</div></div>
+          </div>
+        </div>`).join('')}
+
+      <!-- Add new -->
+      <div class="card" style="border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:200px;cursor:pointer;transition:all .15s;" onclick="openNewLandModal()" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="font-size:32px;margin-bottom:8px;">🌍</div>
+        <div style="font-weight:500;color:var(--teal);">Land hinzufügen</div>
+        <div style="font-size:12px;color:var(--gray-m);margin-top:4px;">Neues Land & Sprachen</div>
+      </div>
+    </div>`;
+}
+
+function openLandModal(landId){
+  const l=DB.laender.find(x=>x.id===landId);
+  openModal(`
+    <div class="modal-title">${l.flag} ${l.name}</div>
+    <div class="modal-sub">Ländereinstellungen & Sprachkonfiguration</div>
+    <div class="field"><label>Landesname</label><input class="inp" value="${l.name}" id="m-land-name"></div>
+    <div class="field"><label>ISO-Code</label><input class="inp" value="${l.iso}" id="m-land-iso" style="text-transform:uppercase;" maxlength="2"></div>
+    <div class="field"><label>Lehrplan-Standard</label>
+      <select class="sel" id="m-land-lehrplan">
+        ${['LP21','KMK','AHS','IB','UK National Curriculum','Baccalauréat'].map(lp=>`<option ${lp===l.lehrplan?'selected':''}>${lp}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Notensystem</label>
+      <select class="sel" id="m-land-noten">
+        ${['1-6','1-5','A-F','0-100','0-20'].map(n=>`<option ${n===l.notensystem?'selected':''}>${n}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field">
+      <label>Verfügbare Sprachen in diesem Land</label>
+      <div class="lang-chips" id="m-lang-chips">
+        ${ALL_LANGS.map(lang=>`<div class="lang-chip ${l.sprachen.includes(lang)?'on':''}" onclick="toggleLangChip(this,'${lang}')" data-lang="${lang}">${lang} — ${LANG_LABELS[lang]||lang}</div>`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--gray-m);margin-top:6px;">Mindestens 1, maximal 4 Sprachen. Schüler wählen ihre Unterrichtssprache aus dieser Liste.</div>
+    </div>
+    <div class="field"><label>Zeitzone</label>
+      <select class="sel" id="m-land-tz">
+        ${['Europe/Zurich','Europe/Berlin','Europe/Vienna','Europe/London','Europe/Paris','America/New_York'].map(tz=>`<option ${tz===l.timezone?'selected':''}>${tz}</option>`).join('')}
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-teal" onclick="saveLand('${landId}')">Speichern</button>
+    </div>`);
+}
+
+function openNewLandModal(){
+  openModal(`
+    <div class="modal-title">🌍 Neues Land hinzufügen</div>
+    <div class="modal-sub">Land & Sprachkonfiguration für die Organisation</div>
+    <div class="field"><label>Landesname</label><input class="inp" placeholder="z.B. Frankreich" id="m-land-name"></div>
+    <div class="field"><label>ISO-Code</label><input class="inp" placeholder="FR" id="m-land-iso" style="text-transform:uppercase;" maxlength="2"></div>
+    <div class="field"><label>Lehrplan-Standard</label>
+      <select class="sel" id="m-land-lehrplan">
+        ${['LP21','KMK','AHS','IB','UK National Curriculum','Baccalauréat','Autre'].map(lp=>`<option>${lp}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Notensystem</label>
+      <select class="sel" id="m-land-noten">
+        ${['1-6','1-5','A-F','0-100','0-20'].map(n=>`<option>${n}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field">
+      <label>Verfügbare Sprachen</label>
+      <div class="lang-chips" id="m-lang-chips">
+        ${ALL_LANGS.map(lang=>`<div class="lang-chip" onclick="toggleLangChip(this,'${lang}')" data-lang="${lang}">${lang} — ${LANG_LABELS[lang]||lang}</div>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label>Zeitzone</label>
+      <select class="sel" id="m-land-tz">
+        ${['Europe/Zurich','Europe/Berlin','Europe/Vienna','Europe/London','Europe/Paris'].map(tz=>`<option>${tz}</option>`).join('')}
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-teal" onclick="saveNewLand()">Land hinzufügen</button>
+    </div>`);
+}
+
+function toggleLangChip(el,lang){el.classList.toggle('on');}
+
+function saveLand(landId){
+  const l=DB.laender.find(x=>x.id===landId);
+  l.name=document.getElementById('m-land-name').value;
+  l.iso=document.getElementById('m-land-iso').value.toUpperCase();
+  l.lehrplan=document.getElementById('m-land-lehrplan').value;
+  l.notensystem=document.getElementById('m-land-noten').value;
+  l.timezone=document.getElementById('m-land-tz').value;
+  l.sprachen=[...document.querySelectorAll('#m-lang-chips .lang-chip.on')].map(el=>el.dataset.lang);
+  closeModal();renderLaender();
+}
+
+function saveNewLand(){
+  const name=document.getElementById('m-land-name').value;
+  const iso=document.getElementById('m-land-iso').value.toUpperCase();
+  const sprachen=[...document.querySelectorAll('#m-lang-chips .lang-chip.on')].map(el=>el.dataset.lang);
+  if(!name||!iso||!sprachen.length){alert('Bitte Name, ISO-Code und mind. 1 Sprache angeben.');return;}
+  const flags={CH:'🇨🇭',DE:'🇩🇪',AT:'🇦🇹',FR:'🇫🇷',GB:'🇬🇧',US:'🇺🇸',IT:'🇮🇹',ES:'🇪🇸'};
+  DB.laender.push({id:'land_'+iso.toLowerCase(),name,iso,flag:flags[iso]||'🏳️',sprachen,
+    lehrplan:document.getElementById('m-land-lehrplan').value,
+    notensystem:document.getElementById('m-land-noten').value,
+    timezone:document.getElementById('m-land-tz').value,schulen:[]});
+  closeModal();renderLaender();
+}
+
+// ═══════════════════════════════════════════════════════
+// SCHULEN
+// ═══════════════════════════════════════════════════════
+function renderSchulen(){
+  document.getElementById('view-actions').innerHTML=`<button class="btn btn-teal" onclick="openNewSchuleModal()">+ Schule hinzufügen</button>`;
+  document.getElementById('view-content').innerHTML=`
+    <table class="tbl">
+      <thead><tr><th>Schule</th><th>Land</th><th>Stadt</th><th>Sprachen</th><th>Klassen</th><th>Schüler</th><th>Aktionen</th></tr></thead>
+      <tbody>${DB.schulen.map(s=>{
+        const land=DB.laender.find(l=>l.id===s.landId);
+        return`<tr>
+          <td><div style="font-weight:500;">${s.name}</div><div style="font-size:11px;color:var(--gray-m);">${s.id}</div></td>
+          <td>${land?.flag} ${land?.name||'—'}</td>
+          <td>${s.city}</td>
+          <td style="display:flex;gap:3px;flex-wrap:wrap;">${(land?.sprachen||[]).map(sp=>`<span class="pill pill-purple" style="font-size:10px;">${sp}</span>`).join('')}</td>
+          <td>${s.klassen}</td>
+          <td>${s.students.toLocaleString()}</td>
+          <td style="display:flex;gap:6px;">
+            <button class="btn btn-ghost btn-sm" onclick="openEditSchuleModal('${s.id}')">Bearbeiten</button>
+            <button class="btn btn-ghost btn-sm" onclick="showView('klassen')">Klassen</button>
+          </td>
+        </tr>`;}).join('')}
+      </tbody>
+    </table>`;
+}
+
+function openNewSchuleModal(){
+  openModal(`
+    <div class="modal-title">🏫 Neue Schule hinzufügen</div>
+    <div class="modal-sub">Neuer Schulstandort der Organisation</div>
+    <div class="field"><label>Schulname</label><input class="inp" placeholder="SIS Genf" id="m-sch-name"></div>
+    <div class="field"><label>Land</label>
+      <select class="sel" id="m-sch-land">
+        ${DB.laender.map(l=>`<option value="${l.id}">${l.flag} ${l.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Stadt</label><input class="inp" placeholder="Genf" id="m-sch-city"></div>
+    <div class="field"><label>Adresse</label><input class="inp" placeholder="Musterstrasse 1, 8000 Zürich" id="m-sch-addr"></div>
+    <div class="field"><label>Schulleitung (Name)</label><input class="inp" placeholder="Dr. Anna Schmidt" id="m-sch-sl"></div>
+    <div class="field"><label>Kontakt-E-Mail</label><input class="inp" type="email" placeholder="basel@sis.ch" id="m-sch-email"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-teal" onclick="saveNewSchule()">Schule hinzufügen</button>
+    </div>`);
+}
+
+function openEditSchuleModal(id){
+  const s=DB.schulen.find(x=>x.id===id);
+  openModal(`
+    <div class="modal-title">✏️ ${s.name}</div>
+    <div class="modal-sub">Schulstandort bearbeiten</div>
+    <div class="field"><label>Schulname</label><input class="inp" value="${s.name}" id="m-sch-name"></div>
+    <div class="field"><label>Land</label>
+      <select class="sel" id="m-sch-land">
+        ${DB.laender.map(l=>`<option value="${l.id}" ${l.id===s.landId?'selected':''}>${l.flag} ${l.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Stadt</label><input class="inp" value="${s.city}" id="m-sch-city"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-red btn-sm" onclick="closeModal()">Schule deaktivieren</button>
+      <button class="btn btn-teal" onclick="updateSchule('${id}')">Speichern</button>
+    </div>`);
+}
+
+function saveNewSchule(){
+  const name=document.getElementById('m-sch-name').value;
+  const city=document.getElementById('m-sch-city').value;
+  const landId=document.getElementById('m-sch-land').value;
+  if(!name||!city){alert('Name und Stadt sind Pflichtfelder.');return;}
+  DB.schulen.push({id:'sch_'+name.toLowerCase().replace(/\s/g,'_').slice(0,8),landId,name,city,students:0,klassen:0});
+  closeModal();renderSchulen();
+}
+function updateSchule(id){
+  const s=DB.schulen.find(x=>x.id===id);
+  s.name=document.getElementById('m-sch-name').value;
+  s.city=document.getElementById('m-sch-city').value;
+  s.landId=document.getElementById('m-sch-land').value;
+  closeModal();renderSchulen();
+}
+
+// ═══════════════════════════════════════════════════════
+// KLASSEN & FÄCHER
+// ═══════════════════════════════════════════════════════
+function renderKlassen(){
+  document.getElementById('view-actions').innerHTML=`<button class="btn btn-teal" onclick="openNewKlasseModal()">+ Klasse anlegen</button>`;
+  document.getElementById('view-content').innerHTML=`
+    <table class="tbl">
+      <thead><tr><th>Klasse</th><th>Schule</th><th>Stufe</th><th>Fächer</th><th>Lehrpersonen</th><th>Schüler</th><th>Aktionen</th></tr></thead>
+      <tbody>${DB.klassen.map(k=>{
+        const schule=DB.schulen.find(s=>s.id===k.schuleId);
+        const land=DB.laender.find(l=>l.id===schule?.landId);
+        const lps=k.lehrpersonIds.map(id=>DB.lehrpersonen.find(l=>l.id===id)?.name||id);
+        return`<tr>
+          <td><div style="font-weight:500;">${schule?.name||''} ${k.name}</div><div style="font-size:11px;color:var(--gray-m);">${k.schuljahr}</div></td>
+          <td>${land?.flag} ${schule?.name||'—'}</td>
+          <td><span class="pill pill-teal">${k.stufe}. Klasse</span></td>
+          <td><div style="display:flex;gap:3px;flex-wrap:wrap;">${k.faecher.map(f=>`<span class="pill pill-amber" style="font-size:10px;">${f}</span>`).join('')}</div></td>
+          <td style="font-size:12px;color:var(--gray-m);">${lps.join(', ')}</td>
+          <td>${k.schuelerCount}</td>
+          <td style="display:flex;gap:6px;">
+            <button class="btn btn-ghost btn-sm" onclick="openEditKlasseModal('${k.id}')">Bearbeiten</button>
+            <button class="btn btn-ghost btn-sm">Schüler</button>
+          </td>
+        </tr>`;}).join('')}
+      </tbody>
+    </table>`;
+}
+
+function openNewKlasseModal(){
+  openModal(`
+    <div class="modal-title">📚 Neue Klasse anlegen</div>
+    <div class="modal-sub">Klasse & Fächerzuweisung</div>
+    <div class="field"><label>Schule</label>
+      <select class="sel" id="m-kl-schule">
+        ${DB.schulen.map(s=>{const l=DB.laender.find(x=>x.id===s.landId);return`<option value="${s.id}">${l?.flag} ${s.name}</option>`;}).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Klassenbezeichnung</label><input class="inp" placeholder="5b" id="m-kl-name"></div>
+    <div class="field"><label>Stufe</label>
+      <select class="sel" id="m-kl-stufe">
+        ${[1,2,3,4,5,6,7,8,9].map(s=>`<option value="${s}">${s}. Klasse</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Schuljahr</label><input class="inp" value="2025/26" id="m-kl-sj"></div>
+    <div class="field">
+      <label>Fächer dieser Klasse</label>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;" id="m-fach-chips">
+        ${DB.faecher_pool.map(f=>`<div class="lang-chip" onclick="this.classList.toggle('on')" style="font-size:12px;">${f}</div>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label>Lehrperson(en) zuweisen</label>
+      <select class="sel" id="m-kl-lp" multiple style="min-height:80px;">
+        ${DB.lehrpersonen.map(l=>`<option value="${l.id}">${l.name} (${l.faecher.join(', ')})</option>`).join('')}
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-teal" onclick="saveNewKlasse()">Klasse anlegen</button>
+    </div>`);
+}
+
+function openEditKlasseModal(id){
+  const k=DB.klassen.find(x=>x.id===id);
+  const schule=DB.schulen.find(s=>s.id===k.schuleId);
+  openModal(`
+    <div class="modal-title">✏️ ${schule?.name} ${k.name}</div>
+    <div class="modal-sub">Klasse bearbeiten — ${k.schuljahr}</div>
+    <div class="field"><label>Klassenbezeichnung</label><input class="inp" value="${k.name}" id="m-kl-name"></div>
+    <div class="field">
+      <label>Fächer</label>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;" id="m-fach-chips">
+        ${DB.faecher_pool.map(f=>`<div class="lang-chip ${k.faecher.includes(f)?'on':''}" onclick="this.classList.toggle('on')" style="font-size:12px;">${f}</div>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label>Lehrpersonen</label>
+      <select class="sel" id="m-kl-lp" multiple style="min-height:80px;">
+        ${DB.lehrpersonen.map(l=>`<option value="${l.id}" ${k.lehrpersonIds.includes(l.id)?'selected':''}>${l.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-teal" onclick="saveEditKlasse('${id}')">Speichern</button>
+    </div>`);
+}
+
+function saveNewKlasse(){
+  const name=document.getElementById('m-kl-name').value;
+  const schuleId=document.getElementById('m-kl-schule').value;
+  const stufe=parseInt(document.getElementById('m-kl-stufe').value);
+  const sj=document.getElementById('m-kl-sj').value;
+  const faecher=[...document.querySelectorAll('#m-fach-chips .lang-chip.on')].map(el=>el.textContent);
+  if(!name||!faecher.length){alert('Name und mind. 1 Fach erforderlich.');return;}
+  DB.klassen.push({id:'kl_'+schuleId.slice(-4)+'_'+name.toLowerCase(),schuleId,name,stufe,schuljahr:sj,faecher,lehrpersonIds:[],schuelerCount:0});
+  const schule=DB.schulen.find(s=>s.id===schuleId);if(schule)schule.klassen++;
+  closeModal();renderKlassen();
+}
+
+function saveEditKlasse(id){
+  const k=DB.klassen.find(x=>x.id===id);
+  k.name=document.getElementById('m-kl-name').value;
+  k.faecher=[...document.querySelectorAll('#m-fach-chips .lang-chip.on')].map(el=>el.textContent);
+  k.lehrpersonIds=[...document.getElementById('m-kl-lp').selectedOptions].map(o=>o.value);
+  closeModal();renderKlassen();
+}
+
+// ═══════════════════════════════════════════════════════
+// SCHÜLER
+// ═══════════════════════════════════════════════════════
+function renderSchueler(){
+  document.getElementById('view-actions').innerHTML=`
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" onclick="openImportModal()">CSV Import</button>
+      <button class="btn btn-teal" onclick="openNewSchuelerModal()">+ Schüler anlegen</button>
+    </div>`;
+  document.getElementById('view-content').innerHTML=`
+    <div class="alert alert-amber" style="margin-bottom:16px;">Schüler-Dossiers enthalten persönliche Daten Minderjähriger. Eltern-Einwilligung erforderlich vor Aktivierung.</div>
+    <div class="card">
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <select class="sel" style="width:200px;" id="f-schule" onchange="filterSchueler()">
+          <option value="">Alle Schulen</option>
+          ${DB.schulen.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}
+        </select>
+        <select class="sel" style="width:160px;" id="f-klasse" onchange="filterSchueler()">
+          <option value="">Alle Klassen</option>
+          ${DB.klassen.map(k=>`<option value="${k.id}">${k.name}</option>`).join('')}
+        </select>
+        <input class="inp" style="flex:1;" placeholder="Schüler suchen…" id="f-search" oninput="filterSchueler()">
+      </div>
+      <div id="schueler-list">
+        ${renderSchuelerTable(DB.klassen)}
+      </div>
+    </div>`;
+}
+
+function renderSchuelerTable(klassen){
+  return`<table class="tbl">
+    <thead><tr><th>Schüler/in</th><th>Klasse</th><th>Schule</th><th>Sprache</th><th>Einwilligung</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      ${klassen.map(k=>{
+        const schule=DB.schulen.find(s=>s.id===k.schuleId);
+        const land=DB.laender.find(l=>l.id===schule?.landId);
+        const demoNames=[['Lena Müller','DE'],['Noah Fischer','EN'],['Sofia Chen','bilingual'],['Max Brunner','DE']];
+        return demoNames.slice(0,Math.min(k.schuelerCount,4)).map(([name,lang])=>`<tr>
+          <td><div style="font-weight:500;">${name}</div></td>
+          <td>${schule?.name} ${k.name}</td>
+          <td>${land?.flag} ${schule?.city}</td>
+          <td><span class="pill pill-purple" style="font-size:10px;">${lang}</span></td>
+          <td><span class="pill pill-green" style="font-size:10px;">✓ Erteilt</span></td>
+          <td><span class="pill pill-green">Aktiv</span></td>
+          <td><button class="btn btn-ghost btn-sm">Dossier</button></td>
+        </tr>`).join('');}).join('')}
+    </tbody>
+  </table>`;
+}
+
+function filterSchueler(){/* filter logic */}
+function openNewSchuelerModal(){
+  openModal(`
+    <div class="modal-title">👤 Schüler anlegen</div>
+    <div class="modal-sub">Neues Schüler-Dossier erstellen</div>
+    <div class="g2"><div class="field"><label>Vorname</label><input class="inp" placeholder="Lena" id="m-s-fn"></div>
+    <div class="field"><label>Nachname</label><input class="inp" placeholder="Müller" id="m-s-ln"></div></div>
+    <div class="field"><label>Klasse</label>
+      <select class="sel" id="m-s-kl">
+        ${DB.klassen.map(k=>{const s=DB.schulen.find(x=>x.id===k.schuleId);return`<option value="${k.id}">${s?.name} ${k.name} (${k.schuljahr})</option>`;}).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Unterrichtssprache</label>
+      <select class="sel" id="m-s-lang">
+        <option value="DE">Deutsch</option><option value="EN">English</option><option value="bilingual">Bilingual</option>
+      </select>
+    </div>
+    <div class="field"><label>Geburtsjahr</label><input class="inp" type="number" placeholder="2015" min="2005" max="2020" id="m-s-gj"></div>
+    <div class="field"><label>Eltern-E-Mail (für Einwilligung)</label><input class="inp" type="email" placeholder="eltern@example.com" id="m-s-email"></div>
+    <div style="background:var(--amber-l);border-radius:var(--rs);padding:10px 12px;font-size:12px;color:var(--amber);margin-bottom:14px;">
+      ⚠ Nach dem Anlegen wird eine Einwilligungs-E-Mail an die Eltern gesendet. Dossier wird erst nach Bestätigung aktiviert.
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-teal" onclick="closeModal()">Dossier anlegen & E-Mail senden</button>
+    </div>`);
+}
+
+function openImportModal(){
+  openModal(`
+    <div class="modal-title">📥 CSV-Import</div>
+    <div class="modal-sub">Mehrere Schüler auf einmal importieren</div>
+    <div style="border:2px dashed var(--border);border-radius:var(--r);padding:24px;text-align:center;margin-bottom:14px;cursor:pointer;" onclick="document.getElementById('csv-inp').click()">
+      <input type="file" id="csv-inp" accept=".csv" style="display:none;">
+      <div style="font-size:28px;margin-bottom:6px;">📄</div>
+      <div style="font-weight:500;">CSV-Datei hochladen</div>
+      <div style="font-size:12px;color:var(--gray-m);margin-top:4px;">Spalten: Vorname, Nachname, Klasse, Sprache, Eltern-E-Mail</div>
+    </div>
+    <div class="card-title">CSV-Vorlage</div>
+    <div class="sql-block" style="font-size:11px;padding:12px;">Vorname,Nachname,Klasse,Sprache,ElternEmail
+Lena,Müller,5b,DE,mueller@example.com
+Noah,Fischer,5b,EN,fischer@example.com</div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-teal" onclick="closeModal()">Import starten</button>
+    </div>`);
+}
+
+// ═══════════════════════════════════════════════════════
+// LEHRPERSONEN
+// ═══════════════════════════════════════════════════════
+function renderLehrpersonen(){
+  document.getElementById('view-actions').innerHTML=`<button class="btn btn-teal" onclick="openNewLpModal()">+ Lehrperson einladen</button>`;
+  document.getElementById('view-content').innerHTML=`
+    <table class="tbl">
+      <thead><tr><th>Name</th><th>Schule</th><th>Fächer</th><th>Klassen</th><th>Rolle</th><th>Aktionen</th></tr></thead>
+      <tbody>${DB.lehrpersonen.map(lp=>{
+        const schule=DB.schulen.find(s=>s.id===lp.schuleId);
+        const land=DB.laender.find(l=>l.id===schule?.landId);
+        return`<tr>
+          <td><div style="font-weight:500;">${lp.name}</div><div style="font-size:11px;color:var(--gray-m);">${lp.email}</div></td>
+          <td>${land?.flag} ${schule?.name||'—'}</td>
+          <td><div style="display:flex;gap:3px;flex-wrap:wrap;">${lp.faecher.map(f=>`<span class="pill pill-amber" style="font-size:10px;">${f}</span>`).join('')}</div></td>
+          <td style="font-size:12px;color:var(--gray-m);">${lp.klassen.length} Klasse${lp.klassen.length!==1?'n':''}</td>
+          <td><span class="pill pill-teal">Lehrperson</span></td>
+          <td style="display:flex;gap:6px;">
+            <button class="btn btn-ghost btn-sm" onclick="openEditLpModal('${lp.id}')">Bearbeiten</button>
+          </td>
+        </tr>`;}).join('')}
+      </tbody>
+    </table>`;
+}
+
+function openNewLpModal(){
+  openModal(`
+    <div class="modal-title">👩‍🏫 Lehrperson einladen</div>
+    <div class="modal-sub">Einladungs-E-Mail wird automatisch versendet</div>
+    <div class="g2"><div class="field"><label>Vorname</label><input class="inp" placeholder="Sandra" id="m-lp-fn"></div>
+    <div class="field"><label>Nachname</label><input class="inp" placeholder="Meier" id="m-lp-ln"></div></div>
+    <div class="field"><label>E-Mail</label><input class="inp" type="email" placeholder="s.meier@sis.ch" id="m-lp-email"></div>
+    <div class="field"><label>Schule</label>
+      <select class="sel" id="m-lp-schule">
+        ${DB.schulen.map(s=>{const l=DB.laender.find(x=>x.id===s.landId);return`<option value="${s.id}">${l?.flag} ${s.name}</option>`;}).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Fächer</label>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">
+        ${DB.faecher_pool.slice(0,6).map(f=>`<div class="lang-chip" onclick="this.classList.toggle('on')" style="font-size:12px;">${f}</div>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label>Rolle</label>
+      <select class="sel">
+        <option>Lehrperson</option>
+        <option>Schulleitung</option>
+        <option>Länder-Admin</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-teal" onclick="closeModal()">Einladung senden</button>
+    </div>`);
+}
+function openEditLpModal(id){openModal(`<div class="modal-title">✏️ Lehrperson bearbeiten</div><div class="modal-sub">Zuweisung & Einstellungen</div><div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Schliessen</button></div>`);}
+
+// ═══════════════════════════════════════════════════════
+// ADMINS & ROLLEN
+// ═══════════════════════════════════════════════════════
+function renderAdmins(){
+  document.getElementById('view-content').innerHTML=`
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">Rollen-Hierarchie</div>
+        ${[
+          {role:'Super-Admin',desc:'Vollzugriff auf die gesamte Organisation',scope:'Alle Länder & Schulen',color:'var(--teal)'},
+          {role:'Länder-Admin',desc:'Verwaltet alle Schulen eines Landes',scope:'1 Land, alle Schulen',color:'var(--purple)'},
+          {role:'Schulleitung',desc:'Verwaltet eine einzelne Schule',scope:'1 Schule',color:'var(--coral)'},
+          {role:'Lehrperson',desc:'Zugriff auf eigene Klassen & Fächer',scope:'Eigene Klassen',color:'var(--amber)'},
+          {role:'Schüler',desc:'Eigenes Lernprofil & Aufgaben',scope:'Eigenes Profil',color:'var(--green)'},
+          {role:'Eltern',desc:'Lesezugriff auf Profil des Kindes',scope:'Readonly',color:'var(--gray-m)'},
+        ].map((r,i)=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
+            <div style="width:28px;height:28px;border-radius:50%;background:${r.color};opacity:.15;flex-shrink:0;"></div>
+            <div style="flex:1;"><div style="font-weight:500;font-size:13px;">${r.role}</div><div style="font-size:11px;color:var(--gray-m);">${r.desc}</div></div>
+            <span class="pill pill-gray" style="font-size:10px;">${r.scope}</span>
+          </div>`).join('')}
+      </div>
+      <div class="card">
+        <div class="card-title">Aktuelle Admins</div>
+        ${[
+          {name:'Admin System',email:'admin@sis.ch',rolle:'Super-Admin',aktiv:true},
+          {name:'Hans Müller',email:'h.mueller@sis.ch',rolle:'Länder-Admin CH',aktiv:true},
+          {name:'Julia König',email:'j.koenig@sis.ch',rolle:'Länder-Admin DE',aktiv:true},
+        ].map(a=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+            <div style="flex:1;"><div style="font-weight:500;font-size:13px;">${a.name}</div><div style="font-size:11px;color:var(--gray-m);">${a.email}</div></div>
+            <span class="pill pill-teal" style="font-size:10px;">${a.rolle}</span>
+          </div>`).join('')}
+        <button class="btn btn-ghost btn-sm" style="margin-top:12px;" onclick="openNewLpModal()">+ Admin hinzufügen</button>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// CURRICULUM
+// ═══════════════════════════════════════════════════════
+function renderCurriculum(){
+  document.getElementById('view-content').innerHTML=`
+    <div class="alert alert-teal" style="margin-bottom:16px;">Curricula werden pro Land & Fach definiert. Schulen können das Länder-Curriculum übernehmen oder anpassen.</div>
+    <table class="tbl">
+      <thead><tr><th>Fach</th><th>Land</th><th>Lehrplan</th><th>Milestones</th><th>Sprachen</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        ${[
+          {fach:'Mathematik',land:'🇨🇭 Schweiz',lehrplan:'LP21',ms:16,sprachen:['DE','EN','FR'],status:'Aktiv'},
+          {fach:'Mathematik',land:'🇩🇪 Deutschland',lehrplan:'KMK',ms:14,sprachen:['DE','EN'],status:'In Arbeit'},
+          {fach:'Deutsch',land:'🇨🇭 Schweiz',lehrplan:'LP21',ms:12,sprachen:['DE'],status:'Entwurf'},
+          {fach:'Englisch',land:'🇨🇭 Schweiz',lehrplan:'LP21',ms:12,sprachen:['EN'],status:'Entwurf'},
+        ].map(c=>`<tr>
+          <td style="font-weight:500;">${c.fach}</td>
+          <td>${c.land}</td>
+          <td style="font-size:12px;color:var(--gray-m);">${c.lehrplan}</td>
+          <td><span class="pill pill-purple">${c.ms} Milestones</span></td>
+          <td>${c.sprachen.map(s=>`<span class="pill pill-teal" style="font-size:10px;">${s}</span>`).join(' ')}</td>
+          <td><span class="pill ${c.status==='Aktiv'?'pill-green':c.status==='In Arbeit'?'pill-amber':'pill-gray'}">${c.status}</span></td>
+          <td><button class="btn btn-ghost btn-sm">Bearbeiten</button></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// SQL SCHEMA
+// ═══════════════════════════════════════════════════════
+function renderSchema(){
+  document.getElementById('view-actions').innerHTML=`<button class="btn btn-teal" onclick="copySchema()">Schema kopieren</button>`;
+  document.getElementById('view-content').innerHTML=`
+    <div class="alert alert-teal" style="margin-bottom:16px;">Dieses Schema direkt in Supabase → SQL Editor einfügen und ausführen. Danach ist die Datenbankstruktur bereit.</div>
+    <div class="tabs">
+      <div class="tab active" id="stab-core" onclick="setSchemaTab('core')">Kern-Tabellen</div>
+      <div class="tab" id="stab-learning" onclick="setSchemaTab('learning')">Lern-Tabellen</div>
+      <div class="tab" id="stab-rls" onclick="setSchemaTab('rls')">Row-Level Security</div>
+    </div>
+    <div id="schema-body"></div>`;
+  setSchemaTab('core');
+}
+
+function setSchemaTab(tab){
+  ['core','learning','rls'].forEach(t=>{document.getElementById('stab-'+t).classList.toggle('active',t===tab);});
+  const schemas={
+    core:`<span class="sql-comment">-- ═══════════════════════════════════════════════
+-- SIS AI LEARNING — KERN-TABELLEN
+-- Supabase / PostgreSQL
+-- ═══════════════════════════════════════════════</span>
+
+<span class="sql-kw">CREATE EXTENSION IF NOT EXISTS</span> <span class="sql-str">"uuid-ossp"</span>;
+
+<span class="sql-comment">-- Organisation (root)</span>
+<span class="sql-kw">CREATE TABLE</span> organisations (
+  id          <span class="sql-type">UUID PRIMARY KEY DEFAULT</span> uuid_generate_v4(),
+  name        <span class="sql-type">TEXT NOT NULL</span>,
+  website     <span class="sql-type">TEXT</span>,
+  logo_url    <span class="sql-type">TEXT</span>,
+  founded     <span class="sql-type">INTEGER</span>,
+  contact     <span class="sql-type">TEXT</span>,
+  created_at  <span class="sql-type">TIMESTAMPTZ DEFAULT</span> now()
+);
+
+<span class="sql-comment">-- Länder (mit Sprachkonfiguration)</span>
+<span class="sql-kw">CREATE TABLE</span> laender (
+  id              <span class="sql-type">UUID PRIMARY KEY DEFAULT</span> uuid_generate_v4(),
+  organisation_id <span class="sql-type">UUID REFERENCES</span> organisations(id),
+  name            <span class="sql-type">TEXT NOT NULL</span>,
+  iso_code        <span class="sql-type">CHAR(2) NOT NULL UNIQUE</span>,
+  flag_emoji      <span class="sql-type">TEXT</span>,
+  sprachen        <span class="sql-type">TEXT[] NOT NULL</span>, <span class="sql-comment">-- z.B. {DE, EN, FR}</span>
+  lehrplan        <span class="sql-type">TEXT NOT NULL</span>,   <span class="sql-comment">-- LP21, KMK, IB, etc.</span>
+  notensystem     <span class="sql-type">TEXT DEFAULT</span> <span class="sql-str">'1-6'</span>,
+  timezone        <span class="sql-type">TEXT DEFAULT</span> <span class="sql-str">'Europe/Zurich'</span>,
+  created_at      <span class="sql-type">TIMESTAMPTZ DEFAULT</span> now()
+);
+
+<span class="sql-comment">-- Schulen</span>
+<span class="sql-kw">CREATE TABLE</span> schulen (
+  id          <span class="sql-type">UUID PRIMARY KEY DEFAULT</span> uuid_generate_v4(),
+  land_id     <span class="sql-type">UUID REFERENCES</span> laender(id),
+  name        <span class="sql-type">TEXT NOT NULL</span>,
+  city        <span class="sql-type">TEXT NOT NULL</span>,
+  address     <span class="sql-type">TEXT</span>,
+  email       <span class="sql-type">TEXT</span>,
+  active      <span class="sql-type">BOOLEAN DEFAULT</span> true,
+  created_at  <span class="sql-type">TIMESTAMPTZ DEFAULT</span> now()
+);
+
+<span class="sql-comment">-- Klassen</span>
+<span class="sql-kw">CREATE TABLE</span> klassen (
+  id          <span class="sql-type">UUID PRIMARY KEY DEFAULT</span> uuid_generate_v4(),
+  schule_id   <span class="sql-type">UUID REFERENCES</span> schulen(id),
+  name        <span class="sql-type">TEXT NOT NULL</span>,        <span class="sql-comment">-- '5b'</span>
+  stufe       <span class="sql-type">INTEGER NOT NULL</span>,      <span class="sql-comment">-- 5</span>
+  schuljahr   <span class="sql-type">TEXT NOT NULL</span>,        <span class="sql-comment">-- '2025/26'</span>
+  aktiv       <span class="sql-type">BOOLEAN DEFAULT</span> true,
+  created_at  <span class="sql-type">TIMESTAMPTZ DEFAULT</span> now()
+);
+
+<span class="sql-comment">-- Fächer (Pool + Zuweisung zu Klasse)</span>
+<span class="sql-kw">CREATE TABLE</span> faecher (
+  id    <span class="sql-type">UUID PRIMARY KEY DEFAULT</span> uuid_generate_v4(),
+  name  <span class="sql-type">TEXT NOT NULL UNIQUE</span>
+);
+
+<span class="sql-kw">CREATE TABLE</span> klasse_faecher (
+  klasse_id  <span class="sql-type">UUID REFERENCES</span> klassen(id),
+  fach_id    <span class="sql-type">UUID REFERENCES</span> faecher(id),
+  <span class="sql-kw">PRIMARY KEY</span> (klasse_id, fach_id)
+);
+
+<span class="sql-comment">-- Benutzer (alle Rollen)</span>
+<span class="sql-kw">CREATE TABLE</span> profiles (
+  id           <span class="sql-type">UUID PRIMARY KEY REFERENCES</span> auth.users(id),
+  rolle        <span class="sql-type">TEXT NOT NULL CHECK</span> (rolle <span class="sql-kw">IN</span> (
+                 <span class="sql-str">'super_admin'</span>,<span class="sql-str">'laender_admin'</span>,
+                 <span class="sql-str">'schulleitung'</span>,<span class="sql-str">'lehrperson'</span>,
+                 <span class="sql-str">'schueler'</span>,<span class="sql-str">'eltern'</span>)),
+  vorname      <span class="sql-type">TEXT NOT NULL</span>,
+  nachname     <span class="sql-type">TEXT NOT NULL</span>,
+  email        <span class="sql-type">TEXT NOT NULL</span>,
+  schule_id    <span class="sql-type">UUID REFERENCES</span> schulen(id),
+  land_id      <span class="sql-type">UUID REFERENCES</span> laender(id),
+  sprache      <span class="sql-type">TEXT DEFAULT</span> <span class="sql-str">'DE'</span>,
+  pin          <span class="sql-type">CHAR(4)</span>,              <span class="sql-comment">-- Schüler-PIN</span>
+  aktiv        <span class="sql-type">BOOLEAN DEFAULT</span> false, <span class="sql-comment">-- bis Einwilligung</span>
+  einwilligung <span class="sql-type">BOOLEAN DEFAULT</span> false,
+  created_at   <span class="sql-type">TIMESTAMPTZ DEFAULT</span> now()
+);
+
+<span class="sql-comment">-- Lehrperson ↔ Klasse (m:n)</span>
+<span class="sql-kw">CREATE TABLE</span> lehrperson_klassen (
+  lehrperson_id <span class="sql-type">UUID REFERENCES</span> profiles(id),
+  klasse_id     <span class="sql-type">UUID REFERENCES</span> klassen(id),
+  fach_id       <span class="sql-type">UUID REFERENCES</span> faecher(id),
+  <span class="sql-kw">PRIMARY KEY</span> (lehrperson_id, klasse_id, fach_id)
+);
+
+<span class="sql-comment">-- Schüler ↔ Klasse</span>
+<span class="sql-kw">CREATE TABLE</span> schueler_klassen (
+  schueler_id <span class="sql-type">UUID REFERENCES</span> profiles(id),
+  klasse_id   <span class="sql-type">UUID REFERENCES</span> klassen(id),
+  eintritt    <span class="sql-type">DATE DEFAULT</span> current_date,
+  <span class="sql-kw">PRIMARY KEY</span> (schueler_id, klasse_id)
+);`,
+    learning:`<span class="sql-comment">-- ═══════════════════════════════════════════════
+-- SIS AI LEARNING — LERN-TABELLEN
+-- ═══════════════════════════════════════════════</span>
+
+<span class="sql-comment">-- Curricula (pro Land & Fach)</span>
+<span class="sql-kw">CREATE TABLE</span> curricula (
+  id        <span class="sql-type">UUID PRIMARY KEY DEFAULT</span> uuid_generate_v4(),
+  land_id   <span class="sql-type">UUID REFERENCES</span> laender(id),
+  fach_id   <span class="sql-type">UUID REFERENCES</span> faecher(id),
+  name      <span class="sql-type">TEXT NOT NULL</span>,
+  version   <span class="sql-type">TEXT DEFAULT</span> <span class="sql-str">'1.0'</span>,
+  status    <span class="sql-type">TEXT DEFAULT</span> <span class="sql-str">'draft'</span>,
+  created_at <span class="sql-type">TIMESTAMPTZ DEFAULT</span> now(),
+  <span class="sql-kw">UNIQUE</span>(land_id, fach_id)
+);
+
+<span class="sql-comment">-- Milestones</span>
+<span class="sql-kw">CREATE TABLE</span> milestones (
+  id           <span class="sql-type">UUID PRIMARY KEY DEFAULT</span> uuid_generate_v4(),
+  curriculum_id <span class="sql-type">UUID REFERENCES</span> curricula(id),
+  code         <span class="sql-type">TEXT NOT NULL</span>,   <span class="sql-comment">-- 'MS3.4'</span>
+  title_de     <span class="sql-type">TEXT NOT NULL</span>,
+  title_en     <span class="sql-type">TEXT</span>,
+  title_fr     <span class="sql-type">TEXT</span>,
+  lp21_ref     <span class="sql-type">TEXT</span>,            <span class="sql-comment">-- 'MA.1.A.4.c'</span>
+  bloom_stufe  <span class="sql-type">TEXT</span>,
+  niveau       <span class="sql-type">INTEGER DEFAULT</span> 1, <span class="sql-comment">-- 1=★ 2=★★ 3=★★★</span>
+  unit         <span class="sql-type">TEXT</span>,
+  sort_order   <span class="sql-type">INTEGER</span>,
+  ai_generatable <span class="sql-type">BOOLEAN DEFAULT</span> true
+);
+
+<span class="sql-comment">-- Milestone-Abhängigkeiten</span>
+<span class="sql-kw">CREATE TABLE</span> milestone_prerequisites (
+  milestone_id    <span class="sql-type">UUID REFERENCES</span> milestones(id),
+  prerequisite_id <span class="sql-type">UUID REFERENCES</span> milestones(id),
+  <span class="sql-kw">PRIMARY KEY</span>(milestone_id, prerequisite_id)
+);
+
+<span class="sql-comment">-- Schüler-Milestone-Status (zweigeteilt!)</span>
+<span class="sql-kw">CREATE TABLE</span> schueler_milestones (
+  id              <span class="sql-type">UUID PRIMARY KEY DEFAULT</span> uuid_generate_v4(),
+  schueler_id     <span class="sql-type">UUID REFERENCES</span> profiles(id),
+  milestone_id    <span class="sql-type">UUID REFERENCES</span> milestones(id),
+  uebungs_status  <span class="sql-type">INTEGER DEFAULT</span> 0, <span class="sql-comment">-- 0-3 (KI-Übungen)</span>
+  validiert_status <span class="sql-type">INTEGER DEFAULT</span> 0,<span class="sql-comment">-- 0-3 (Lehrperson)</span>
+  xp_earned       <span class="sql-type">INTEGER DEFAULT</span> 0,
+  updated_at      <span class="sql-type">TIMESTAMPTZ DEFAULT</span> now(),
+  <span class="sql-kw">UNIQUE</span>(schueler_id, milestone_id)
+);
+
+<span class="sql-comment">-- KI-generierte Aufgaben</span>
+<span class="sql-kw">CREATE TABLE</span> aufgaben (
+  id           <span class="sql-type">UUID PRIMARY KEY DEFAULT</span> uuid_generate_v4(),
+  milestone_id <span class="sql-type">UUID REFERENCES</span> milestones(id),
+  schueler_id  <span class="sql-type">UUID REFERENCES</span> profiles(id),
+  sprache      <span class="sql-type">TEXT DEFAULT</span> <span class="sql-str">'DE'</span>,
+  niveau       <span class="sql-type">INTEGER DEFAULT</span> 1,
+  context      <span class="sql-type">TEXT</span>,
+  question     <span class="sql-type">TEXT NOT NULL</span>,
+  solution     <span class="sql-type">TEXT</span>,
+  solution_steps <span class="sql-type">JSONB</span>,
+  xp_reward    <span class="sql-type">INTEGER DEFAULT</span> 10,
+  created_at   <span class="sql-type">TIMESTAMPTZ DEFAULT</span> now()
+);
+
+<span class="sql-comment">-- Schüler-Antworten</span>
+<span class="sql-kw">CREATE TABLE</span> antworten (
+  id          <span class="sql-type">UUID PRIMARY KEY DEFAULT</span> uuid_generate_v4(),
+  aufgabe_id  <span class="sql-type">UUID REFERENCES</span> aufgaben(id),
+  schueler_id <span class="sql-type">UUID REFERENCES</span> profiles(id),
+  antwort     <span class="sql-type">TEXT</span>,
+  korrekt     <span class="sql-type">BOOLEAN</span>,
+  ki_feedback <span class="sql-type">TEXT</span>,
+  xp_earned   <span class="sql-type">INTEGER DEFAULT</span> 0,
+  created_at  <span class="sql-type">TIMESTAMPTZ DEFAULT</span> now()
+);
+
+<span class="sql-comment">-- Prüfungen</span>
+<span class="sql-kw">CREATE TABLE</span> pruefungen (
+  id           <span class="sql-type">UUID PRIMARY KEY DEFAULT</span> uuid_generate_v4(),
+  klasse_id    <span class="sql-type">UUID REFERENCES</span> klassen(id),
+  lehrperson_id <span class="sql-type">UUID REFERENCES</span> profiles(id),
+  datum        <span class="sql-type">DATE NOT NULL</span>,
+  titel        <span class="sql-type">TEXT</span>,
+  notensystem  <span class="sql-type">TEXT DEFAULT</span> <span class="sql-str">'1-6'</span>,
+  created_at   <span class="sql-type">TIMESTAMPTZ DEFAULT</span> now()
+);
+
+<span class="sql-comment">-- Prüfungs-Matrix (Aufgabe → Milestone)</span>
+<span class="sql-kw">CREATE TABLE</span> pruefung_items (
+  id            <span class="sql-type">UUID PRIMARY KEY DEFAULT</span> uuid_generate_v4(),
+  pruefung_id   <span class="sql-type">UUID REFERENCES</span> pruefungen(id),
+  milestone_id  <span class="sql-type">UUID REFERENCES</span> milestones(id),
+  aufgaben_nr   <span class="sql-type">INTEGER NOT NULL</span>,
+  max_punkte    <span class="sql-type">NUMERIC</span>
+);
+
+<span class="sql-comment">-- Prüfungs-Ergebnisse pro Schüler</span>
+<span class="sql-kw">CREATE TABLE</span> pruefung_ergebnisse (
+  id           <span class="sql-type">UUID PRIMARY KEY DEFAULT</span> uuid_generate_v4(),
+  pruefung_id  <span class="sql-type">UUID REFERENCES</span> pruefungen(id),
+  schueler_id  <span class="sql-type">UUID REFERENCES</span> profiles(id),
+  note         <span class="sql-type">NUMERIC</span>,
+  item_results <span class="sql-type">JSONB</span>,  <span class="sql-comment">-- {aufgaben_nr: korrekt}</span>
+  ki_analyse   <span class="sql-type">TEXT</span>,
+  erfasst_am   <span class="sql-type">TIMESTAMPTZ DEFAULT</span> now()
+);`,
+    rls:`<span class="sql-comment">-- ═══════════════════════════════════════════════
+-- ROW LEVEL SECURITY (RLS)
+-- Jeder sieht nur was er darf
+-- ═══════════════════════════════════════════════</span>
+
+<span class="sql-comment">-- RLS aktivieren</span>
+<span class="sql-kw">ALTER TABLE</span> schueler_milestones <span class="sql-kw">ENABLE ROW LEVEL SECURITY</span>;
+<span class="sql-kw">ALTER TABLE</span> antworten <span class="sql-kw">ENABLE ROW LEVEL SECURITY</span>;
+<span class="sql-kw">ALTER TABLE</span> profiles <span class="sql-kw">ENABLE ROW LEVEL SECURITY</span>;
+<span class="sql-kw">ALTER TABLE</span> pruefung_ergebnisse <span class="sql-kw">ENABLE ROW LEVEL SECURITY</span>;
+
+<span class="sql-comment">-- Schüler sehen nur eigene Milestones</span>
+<span class="sql-kw">CREATE POLICY</span> schueler_eigene_milestones
+  <span class="sql-kw">ON</span> schueler_milestones
+  <span class="sql-kw">FOR ALL USING</span> (
+    schueler_id = auth.uid()
+    <span class="sql-kw">OR</span> <span class="sql-kw">EXISTS</span> (
+      <span class="sql-kw">SELECT</span> 1 <span class="sql-kw">FROM</span> profiles
+      <span class="sql-kw">WHERE</span> id = auth.uid()
+      <span class="sql-kw">AND</span> rolle <span class="sql-kw">IN</span> (<span class="sql-str">'lehrperson'</span>,<span class="sql-str">'schulleitung'</span>,<span class="sql-str">'super_admin'</span>)
+    )
+  );
+
+<span class="sql-comment">-- Lehrpersonen sehen Schüler ihrer Klassen</span>
+<span class="sql-kw">CREATE POLICY</span> lehrperson_klassen_schueler
+  <span class="sql-kw">ON</span> profiles
+  <span class="sql-kw">FOR SELECT USING</span> (
+    id = auth.uid()
+    <span class="sql-kw">OR</span> <span class="sql-kw">EXISTS</span> (
+      <span class="sql-kw">SELECT</span> 1 <span class="sql-kw">FROM</span> lehrperson_klassen lk
+      <span class="sql-kw">JOIN</span> schueler_klassen sk <span class="sql-kw">ON</span> sk.klasse_id = lk.klasse_id
+      <span class="sql-kw">WHERE</span> lk.lehrperson_id = auth.uid()
+      <span class="sql-kw">AND</span> sk.schueler_id = profiles.id
+    )
+    <span class="sql-kw">OR</span> <span class="sql-kw">EXISTS</span> (
+      <span class="sql-kw">SELECT</span> 1 <span class="sql-kw">FROM</span> profiles p
+      <span class="sql-kw">WHERE</span> p.id = auth.uid()
+      <span class="sql-kw">AND</span> p.rolle <span class="sql-kw">IN</span> (<span class="sql-str">'schulleitung'</span>,<span class="sql-str">'super_admin'</span>)
+    )
+  );
+
+<span class="sql-comment">-- Nur Lehrpersonen können Milestone-Status validieren</span>
+<span class="sql-kw">CREATE POLICY</span> validierung_nur_lehrperson
+  <span class="sql-kw">ON</span> schueler_milestones
+  <span class="sql-kw">FOR UPDATE USING</span> (true)
+  <span class="sql-kw">WITH CHECK</span> (
+    <span class="sql-kw">CASE WHEN</span> validiert_status IS DISTINCT FROM OLD.validiert_status
+    <span class="sql-kw">THEN EXISTS</span> (
+      <span class="sql-kw">SELECT</span> 1 <span class="sql-kw">FROM</span> profiles
+      <span class="sql-kw">WHERE</span> id = auth.uid()
+      <span class="sql-kw">AND</span> rolle <span class="sql-kw">IN</span> (<span class="sql-str">'lehrperson'</span>,<span class="sql-str">'schulleitung'</span>,<span class="sql-str">'super_admin'</span>)
+    )
+    <span class="sql-kw">ELSE</span> true
+    <span class="sql-kw">END</span>
+  );
+
+<span class="sql-comment">-- Super-Admin sieht alles</span>
+<span class="sql-kw">CREATE POLICY</span> super_admin_full_access
+  <span class="sql-kw">ON</span> profiles
+  <span class="sql-kw">FOR ALL USING</span> (
+    <span class="sql-kw">EXISTS</span> (
+      <span class="sql-kw">SELECT</span> 1 <span class="sql-kw">FROM</span> profiles
+      <span class="sql-kw">WHERE</span> id = auth.uid()
+      <span class="sql-kw">AND</span> rolle = <span class="sql-str">'super_admin'</span>
+    )
+  );
+
+<span class="sql-comment">-- Eltern: readonly auf Kind-Profil</span>
+<span class="sql-kw">CREATE TABLE</span> eltern_kinder (
+  eltern_id <span class="sql-type">UUID REFERENCES</span> profiles(id),
+  kind_id   <span class="sql-type">UUID REFERENCES</span> profiles(id),
+  <span class="sql-kw">PRIMARY KEY</span>(eltern_id, kind_id)
+);
+
+<span class="sql-comment">-- Datenschutz: Löschfunktion</span>
+<span class="sql-kw">CREATE OR REPLACE FUNCTION</span> delete_schueler_data(p_schueler_id <span class="sql-type">UUID</span>)
+<span class="sql-kw">RETURNS VOID AS</span> $$
+<span class="sql-kw">BEGIN</span>
+  <span class="sql-kw">DELETE FROM</span> antworten <span class="sql-kw">WHERE</span> schueler_id = p_schueler_id;
+  <span class="sql-kw">DELETE FROM</span> schueler_milestones <span class="sql-kw">WHERE</span> schueler_id = p_schueler_id;
+  <span class="sql-kw">DELETE FROM</span> pruefung_ergebnisse <span class="sql-kw">WHERE</span> schueler_id = p_schueler_id;
+  <span class="sql-kw">DELETE FROM</span> schueler_klassen <span class="sql-kw">WHERE</span> schueler_id = p_schueler_id;
+  <span class="sql-kw">DELETE FROM</span> profiles <span class="sql-kw">WHERE</span> id = p_schueler_id;
+<span class="sql-kw">END;</span>
+$$ <span class="sql-kw">LANGUAGE</span> plpgsql <span class="sql-kw">SECURITY DEFINER</span>;`
+  };
+  document.getElementById('schema-body').innerHTML=`<div class="sql-block" id="schema-sql">${schemas[tab]}</div>`;
+}
+
+function copySchema(){
+  const el=document.getElementById('schema-sql');
+  navigator.clipboard.writeText(el.innerText).then(()=>{
+    const btn=document.querySelector('[onclick="copySchema()"]');
+    btn.textContent='✓ Kopiert!';setTimeout(()=>btn.textContent='Schema kopieren',2000);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// DATENSCHUTZ
+// ═══════════════════════════════════════════════════════
+function renderDatenschutz(){
+  document.getElementById('view-content').innerHTML=`
+    <div class="g2">
+      <div>
+        <div class="card" style="margin-bottom:14px;border-top:3px solid var(--teal);">
+          <div class="card-title">Compliance-Status</div>
+          ${[
+            {label:'DSGVO / revDSG',status:'✓',note:'Supabase EU-Region Frankfurt'},
+            {label:'DPA mit Supabase',status:'⚠',note:'Muss unterzeichnet werden'},
+            {label:'Eltern-Einwilligung',status:'⚠',note:'Prozess definiert, noch nicht aktiv'},
+            {label:'Datenschutzkonzept',status:'⚠',note:'Entwurf vorhanden'},
+            {label:'Löschrecht',status:'✓',note:'delete_schueler_data() implementiert'},
+            {label:'Verschlüsselung',status:'✓',note:'Supabase at-rest & in-transit'},
+            {label:'API-Key Schutz',status:'⚠',note:'Edge Function noch nicht deployed'},
+          ].map(item=>`
+            <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);">
+              <span style="font-size:16px;width:20px;">${item.status}</span>
+              <div style="flex:1;"><div style="font-size:13px;font-weight:500;">${item.label}</div>
+              <div style="font-size:11px;color:var(--gray-m);">${item.note}</div></div>
+              <span class="pill ${item.status==='✓'?'pill-green':'pill-amber'}">${item.status==='✓'?'OK':'Pending'}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title">Datenkategorien & Aufbewahrung</div>
+          ${[
+            {kat:'Schülerdaten',inhalt:'Name, Klasse, Sprache',aufbew:'Schulaustritt + 2 Jahre',sensibel:true},
+            {kat:'Lernfortschritt',inhalt:'Milestone-Status, XP',aufbew:'Schulaustritt + 1 Jahr',sensibel:false},
+            {kat:'Aufgaben & Antworten',inhalt:'KI-generierte Aufgaben',aufbew:'6 Monate',sensibel:false},
+            {kat:'Prüfungsergebnisse',inhalt:'Noten, Item-Resultate',aufbew:'Schulaustritt + 5 Jahre',sensibel:true},
+            {kat:'Login-Logs',inhalt:'Zugangszeitpunkte',aufbew:'90 Tage',sensibel:false},
+          ].map(d=>`
+            <div style="font-size:12px;padding:8px 0;border-bottom:1px solid var(--border);">
+              <div style="display:flex;justify-content:space-between;"><strong>${d.kat}</strong>${d.sensibel?'<span class="pill pill-red" style="font-size:10px;">Besonders schützenswert</span>':''}</div>
+              <div style="color:var(--gray-m);margin-top:2px;">${d.inhalt} · Aufbew.: ${d.aufbew}</div>
+            </div>`).join('')}
+        </div>
+        <div class="card">
+          <div class="card-title">Nächste Schritte</div>
+          <div style="font-size:12px;line-height:1.9;">
+            <div>1. DPA mit Supabase unter <strong>app.supabase.com → Settings → Legal</strong> unterzeichnen</div>
+            <div>2. Eltern-Einwilligungs-E-Mail mit Rechtsanwalt abstimmen</div>
+            <div>3. Datenschutzkonzept durch Schulleitung genehmigen lassen</div>
+            <div>4. Datenschutzbeauftragten (DSB) informieren</div>
+            <div>5. Anthropic API: DPA anfragen unter <strong>privacy@anthropic.com</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════════════
+function openModal(html){
+  document.getElementById('modal-content').innerHTML=html;
+  document.getElementById('modal-bg').classList.add('open');
+}
+function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+showView('overview');
+</script>
+</body>
+</html>
