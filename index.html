@@ -2739,25 +2739,37 @@ async function revertJahreswechsel(){
   const newSJ=schuljahre[schuljahre.length-1];
   const oldSJ=schuljahre[schuljahre.length-2];
   if(!confirm('Jahreswechsel zurückstellen?\n\nKlassen '+newSJ+' werden gelöscht, Klassen '+oldSJ+' wieder aktiviert.')) return;
-  const{data:newKlassen}=await sb.from('klassen').select('id').eq('schuljahr',newSJ);
-  if(!newKlassen?.length){alert('Keine Klassen für '+newSJ+' gefunden.');return;}
-  const newKlassenIds=newKlassen.map(k=>k.id);
-  const{data:newSchueler}=await sb.from('schueler_klassen').select('schueler_id').in('klasse_id',newKlassenIds);
-  const schuelerIds=(newSchueler||[]).map(s=>s.schueler_id);
-  if(schuelerIds.length>0){
-    const{data:msData}=await sb.from('schueler_milestones').select('id').in('schueler_id',schuelerIds).limit(1);
-    if(msData?.length>0){alert('Nicht möglich: Es existieren bereits Lernfortschritte im neuen Schuljahr.');return;}
+
+  const res=document.getElementById('view-content');
+  const statusEl=document.createElement('div');
+  statusEl.className='alert alert-teal';
+  statusEl.style.marginBottom='12px';
+  res.prepend(statusEl);
+  statusEl.textContent='⏳ Lösche Klassen '+newSJ+'...';
+
+  // Alle Klassen des neuen SJ holen
+  const{data:neueKlassen}=await sb.from('klassen').select('id').eq('schuljahr',newSJ);
+  const ids=(neueKlassen||[]).map(k=>k.id);
+
+  if(ids.length>0){
+    // Abhängigkeiten zuerst löschen
+    for(const id of ids){
+      await sb.from('schueler_klassen').delete().eq('klasse_id',id);
+      await sb.from('lehrperson_klassen').delete().eq('klasse_id',id);
+      await sb.from('klasse_faecher').delete().eq('klasse_id',id);
+    }
+    // Dann Klassen löschen — direkt nach schuljahr
+    const{error}=await sb.from('klassen').delete().eq('schuljahr',newSJ);
+    if(error){statusEl.className='alert alert-red';statusEl.textContent='Fehler: '+error.message;return;}
   }
-  for(const k of newKlassen){
-    await sb.from('schueler_klassen').delete().eq('klasse_id',k.id);
-    await sb.from('lehrperson_klassen').delete().eq('klasse_id',k.id);
-    await sb.from('klasse_faecher').delete().eq('klasse_id',k.id);
-    await sb.from('klassen').delete().eq('id',k.id);
-  }
+
+  // Alte Klassen reaktivieren
   await sb.from('klassen').update({aktiv:true}).eq('schuljahr',oldSJ);
-  alert('✓ Zurückgestellt. Klassen '+newSJ+' gelöscht, Klassen '+oldSJ+' wieder aktiv.');
+
+  statusEl.className='alert alert-green';
+  statusEl.textContent='✓ Zurückgestellt. Klassen '+newSJ+' gelöscht, Klassen '+oldSJ+' wieder aktiv.';
   await loadDBFromSupabase();
-  renderJahreswechsel();
+  setTimeout(()=>renderJahreswechsel(),1500);
 }
 
 // ═══════════════════════════════════════════════════════
