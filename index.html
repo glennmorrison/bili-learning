@@ -1898,11 +1898,9 @@ function renderLehrpersonen(){
     <table class="tbl">
       <thead><tr><th>Name</th><th>Schule</th><th>Fächer</th><th>Klassen</th><th>Rolle</th><th>Aktionen</th></tr></thead>
       <tbody>${DB.lehrpersonen.map(lp=>{
-        const schule=DB.schulen.find(s=>s.id===lp.schuleId);
-        const land=DB.laender.find(l=>l.id===schule?.landId);
         return`<tr>
           <td><div style="font-weight:500;">${lp.name}</div><div style="font-size:11px;color:var(--gray-m);">${lp.email}</div></td>
-          <td>${land?.flag} ${schule?.name||'—'}</td>
+          <td>${lp.klassen.length>0?lp.klassen[0]:'—'}</td>
           <td><div style="display:flex;gap:3px;flex-wrap:wrap;">${lp.faecher.map(f=>`<span class="pill pill-amber" style="font-size:10px;">${f}</span>`).join('')}</div></td>
           <td style="font-size:12px;color:var(--gray-m);">${lp.klassen.length} Klasse${lp.klassen.length!==1?'n':''}</td>
           <td><span class="pill pill-teal">Lehrperson</span></td>
@@ -1967,7 +1965,59 @@ async function saveLehrperson(){
   }catch(e){res.innerHTML='<div style="color:#A32D2D;font-size:12px;">Fehler: '+e.message+'</div>';}
 }
 
-function openEditLpModal(id){openModal(`<div class="modal-title">✏️ Lehrperson bearbeiten</div><div class="modal-sub">Zuweisung & Einstellungen</div><div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Schliessen</button></div>`);}
+async function openEditLpModal(id){
+  const lp=DB.lehrpersonen.find(x=>x.id===id);
+  if(!lp){alert('Lehrperson nicht gefunden.');return;}
+  // Load existing lehrperson_klassen from Supabase
+  let existingKlassen=[];
+  if(sb){
+    const{data}=await sb.from('lehrperson_klassen').select('klasse_id,unterrichtssprache').eq('lehrperson_id',id);
+    existingKlassen=data||[];
+  }
+  const sprachen=['DE','EN','FR','IT','ES','PT'];
+  openModal(`
+    <div class="modal-title">✏️ ${lp.name}</div>
+    <div class="modal-sub">Klassen-Zuweisung & Unterrichtssprache</div>
+    <div class="field">
+      <label>Klassen & Unterrichtssprache</label>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+        ${DB.klassen.map(k=>{
+          const schule=DB.schulen.find(s=>s.id===k.schuleId);
+          const existing=existingKlassen.find(x=>x.klasse_id===k.id);
+          const isChecked=!!existing;
+          const currentLang=existing?.unterrichtssprache||'DE';
+          return`<div style="display:flex;align-items:center;gap:8px;padding:8px;border:1.5px solid var(--border);border-radius:var(--rs);background:#fff;">
+            <input type="checkbox" id="lk-cb-${k.id}" value="${k.id}" ${isChecked?'checked':''} style="width:15px;height:15px;accent-color:var(--teal);">
+            <label for="lk-cb-${k.id}" style="flex:1;font-size:13px;cursor:pointer;">${schule?.name||''} ${k.name} <span style="font-size:11px;color:var(--gray-m);">${k.schuljahr}</span></label>
+            <select class="sel" id="lk-lang-${k.id}" style="width:80px;padding:5px 8px;font-size:12px;">
+              ${sprachen.map(s=>`<option value="${s}" ${currentLang===s?'selected':''}>${s}</option>`).join('')}
+            </select>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+    <div id="lp-edit-res" style="margin-bottom:8px;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-teal" onclick="saveEditLp('${id}')">Speichern</button>
+    </div>`);
+}
+
+async function saveEditLp(id){
+  const res=document.getElementById('lp-edit-res');
+  const selKlassen=[...document.querySelectorAll('[id^="lk-cb-"]:checked')].map(cb=>({
+    klasse_id:cb.value,
+    unterrichtssprache:document.getElementById('lk-lang-'+cb.value)?.value||'DE'
+  }));
+  if(!sb)return;
+  await sb.from('lehrperson_klassen').delete().eq('lehrperson_id',id);
+  for(const k of selKlassen){
+    await sb.from('lehrperson_klassen').insert({lehrperson_id:id,klasse_id:k.klasse_id,unterrichtssprache:k.unterrichtssprache});
+  }
+  res.innerHTML='<div class="alert alert-green">✓ Gespeichert!</div>';
+  await loadDBFromSupabase();
+  setTimeout(()=>{closeModal();renderLehrpersonen();},1000);
+}
 
 // ═══════════════════════════════════════════════════════
 // ADMINS & ROLLEN
