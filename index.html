@@ -1572,53 +1572,54 @@ async function deleteFach(id,name){
 // ═══════════════════════════════════════════════════════
 // SCHÜLER
 // ═══════════════════════════════════════════════════════
-function renderAdminSchueler(){
+async function renderAdminSchueler(){
   document.getElementById('view-actions').innerHTML=`
     <div style="display:flex;gap:8px;">
       <button class="btn btn-ghost" onclick="openImportModal()">CSV Import</button>
       <button class="btn btn-teal" onclick="openNewSchuelerModal()">+ Schüler anlegen</button>
     </div>`;
-  document.getElementById('view-content').innerHTML=`
+  const c=document.getElementById('view-content');
+  c.innerHTML='<div class="loadbar"></div>';
+  let schueler=[];
+  if(sb){
+    const{data}=await sb.from('profiles').select('*, schueler_klassen(klasse_id, klassen(name, schule_id, schulen(name, city, land_id, laender(iso_code))))').eq('rolle','schueler').order('nachname');
+    schueler=data||[];
+  }
+  c.innerHTML=`
     <div class="card">
       <div style="display:flex;gap:10px;margin-bottom:14px;">
-        <select class="sel" style="width:200px;" id="f-schule" onchange="filterSchueler()">
-          <option value="">Alle Schulen</option>
-          ${DB.schulen.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}
-        </select>
-        <select class="sel" style="width:160px;" id="f-klasse" onchange="filterSchueler()">
-          <option value="">Alle Klassen</option>
-          ${DB.klassen.map(k=>`<option value="${k.id}">${k.name}</option>`).join('')}
-        </select>
-        <input class="inp" style="flex:1;" placeholder="Schüler suchen…" id="f-search" oninput="filterSchueler()">
+        <input class="inp" style="flex:1;" placeholder="Schüler suchen…" id="f-search" oninput="filterSchuelerLive(this.value,'${schueler.map(s=>s.id).join(',')}')">
       </div>
-      <div id="schueler-list">
-        ${renderSchuelerTable(DB.klassen)}
-      </div>
+      ${schueler.length===0?`<div style="text-align:center;padding:40px;color:var(--gray-m);">
+        <div style="font-size:32px;margin-bottom:8px;">👥</div>
+        <div style="font-weight:500;">Noch keine Schüler angelegt</div>
+        <div style="font-size:12px;margin-top:4px;">Über "+ Schüler anlegen" hinzufügen</div>
+      </div>`:`
+      <table class="tbl">
+        <thead><tr><th>Schüler/in</th><th>Klasse</th><th>Schule</th><th>Sprache</th><th>Status</th><th></th></tr></thead>
+        <tbody id="schueler-tbody">
+          ${schueler.map(s=>{
+            const kl=s.schueler_klassen?.[0]?.klassen;
+            const schule=kl?.schulen;
+            const land=schule?.laender;
+            return`<tr data-name="${(s.vorname+' '+s.nachname).toLowerCase()}">
+              <td><div style="font-weight:500;">${s.vorname} ${s.nachname}</div><div style="font-size:11px;color:var(--gray-m);">${s.email}</div></td>
+              <td>${kl?.name||'—'}</td>
+              <td>${land?isoToFlag(land.iso_code):''} ${schule?.name||'—'}</td>
+              <td><span class="pill pill-purple" style="font-size:10px;">${s.sprache||'DE'}</span></td>
+              <td><span class="pill ${s.aktiv?'pill-green':'pill-amber'}" style="font-size:10px;">${s.aktiv?'Aktiv':'Inaktiv'}</span></td>
+              <td><button class="btn btn-ghost btn-sm" onclick="alert('Dossier coming soon')">Dossier</button></td>
+            </tr>`;}).join('')}
+        </tbody>
+      </table>`}
     </div>`;
 }
 
-function renderSchuelerTable(klassen){
-  return`<table class="tbl">
-    <thead><tr><th>Schüler/in</th><th>Klasse</th><th>Schule</th><th>Sprache</th><th>Status</th><th></th></tr></thead>
-    <tbody>
-      ${klassen.map(k=>{
-        const schule=DB.schulen.find(s=>s.id===k.schuleId);
-        const land=DB.laender.find(l=>l.id===schule?.landId);
-        const demoNames=[['Lena Müller','DE'],['Noah Fischer','EN'],['Sofia Chen','bilingual'],['Max Brunner','DE']];
-        return demoNames.slice(0,Math.min(k.schuelerCount,4)).map(([name,lang])=>`<tr>
-          <td><div style="font-weight:500;">${name}</div></td>
-          <td>${schule?.name} ${k.name}</td>
-          <td>${land?.flag} ${schule?.city}</td>
-          <td><span class="pill pill-purple" style="font-size:10px;">${lang}</span></td>
-          <td><span class="pill pill-green" style="font-size:10px;">✓ Erteilt</span></td>
-          <td><span class="pill pill-green">Aktiv</span></td>
-          <td><button class="btn btn-ghost btn-sm">Dossier</button></td>
-        </tr>`).join('');}).join('')}
-    </tbody>
-  </table>`;
+function filterSchuelerLive(q){
+  document.querySelectorAll('#schueler-tbody tr').forEach(tr=>{
+    tr.style.display=tr.dataset.name?.includes(q.toLowerCase())?'':'none';
+  });
 }
-
-function filterSchueler(){/* filter logic */}
 function openNewSchuelerModal(){
   openModal(`
     <div class="modal-title">👤 Schüler anlegen</div>
