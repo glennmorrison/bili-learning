@@ -2578,12 +2578,14 @@ async function renderJahreswechsel(){
   const c=document.getElementById('view-content');
   c.innerHTML='<div class="loadbar"></div>';
   // Aktive Klassen laden
-  let klassen=[];
+  let klassen=[], schuljahre=[];
   if(sb){
-    const{data}=await sb.from('klassen')
-      .select('*, schulen(name), klasse_faecher(curriculum_id, faecher(name))')
-      .eq('aktiv',true).order('stufe');
+    const[{data},{data:allSJ}]=await Promise.all([
+      sb.from('klassen').select('*, schulen(name), klasse_faecher(curriculum_id, faecher(name))').eq('aktiv',true).order('stufe'),
+      sb.from('klassen').select('schuljahr')
+    ]);
     klassen=data||[];
+    schuljahre=[...new Set((allSJ||[]).map(k=>k.schuljahr))].sort();
   }
   // Nächstes Schuljahr berechnen
   const currentSJ=klassen[0]?.schuljahr||'2025/26';
@@ -2644,17 +2646,19 @@ async function renderJahreswechsel(){
       </button>
     </div>
 
+    ${schuljahre.length>1?`
     <div class="card" style="border-top:3px solid var(--coral);">
       <div class="card-title">Jahreswechsel rückgängig machen</div>
       <div style="font-size:13px;color:var(--gray-m);margin-bottom:14px;">
-        Stellt den letzten Jahreswechsel zurück. Nur möglich solange keine neuen Milestone-Daten
-        im neuen Schuljahr existieren.
+        Stellt den Wechsel von <strong>${schuljahre[schuljahre.length-2]}</strong> → <strong>${schuljahre[schuljahre.length-1]}</strong> zurück.
+        Nur möglich solange noch keine neuen Lernfortschritte erfasst wurden.
       </div>
       <button class="btn" style="background:var(--coral-l);color:var(--coral);border:1.5px solid var(--coral-l);"
-        onclick="revertJahreswechsel('${nextSJ}','${currentSJ}')">
-        ↩ Jahreswechsel zurückstellen
+        onclick="revertJahreswechsel()">
+        ↩ Jahreswechsel ${schuljahre[schuljahre.length-1]} zurückstellen
       </button>
-    </div>`;
+    </div>`:''}
+  `;
 }
 
 async function executeJahreswechsel(currentSJ, nextSJ){
@@ -2728,46 +2732,30 @@ Dieser Schritt kann rückgängig gemacht werden solange noch keine neuen Lernfor
   setTimeout(()=>{loadDBFromSupabase().then(()=>renderJahreswechsel());},2000);
 }
 
-async function revertJahreswechsel(newSJ, oldSJ){
-  if(!confirm(`Jahreswechsel zurückstellen?
-
-Klassen ${newSJ} werden gelöscht, Klassen ${oldSJ} werden wieder aktiviert.
-
-Nur möglich wenn noch keine neuen Lernfortschritte erfasst wurden.`)) return;
-
-  // Prüfen ob neue Milestone-Daten existieren
-  const{data:newKlassen}=await sb.from('klassen').select('id').eq('schuljahr',newSJ).eq('aktiv',true);
-  if(!newKlassen?.length){alert('Keine aktiven Klassen für '+newSJ+' gefunden.');return;}
-
+async function revertJahreswechsel(){
+  const{data:alleSJ}=await sb.from('klassen').select('schuljahr');
+  const schuljahre=[...new Set((alleSJ||[]).map(k=>k.schuljahr))].sort();
+  if(schuljahre.length<2){alert('Nur ein Schuljahr vorhanden.');return;}
+  const newSJ=schuljahre[schuljahre.length-1];
+  const oldSJ=schuljahre[schuljahre.length-2];
+  if(!confirm('Jahreswechsel zurückstellen?\n\nKlassen '+newSJ+' werden gelöscht, Klassen '+oldSJ+' wieder aktiviert.')) return;
+  const{data:newKlassen}=await sb.from('klassen').select('id').eq('schuljahr',newSJ);
+  if(!newKlassen?.length){alert('Keine Klassen für '+newSJ+' gefunden.');return;}
   const newKlassenIds=newKlassen.map(k=>k.id);
   const{data:newSchueler}=await sb.from('schueler_klassen').select('schueler_id').in('klasse_id',newKlassenIds);
   const schuelerIds=(newSchueler||[]).map(s=>s.schueler_id);
-
-  // Milestone-Daten im neuen Schuljahr prüfen
   if(schuelerIds.length>0){
-    const{data:msData}=await sb.from('schueler_milestones')
-      .select('id').in('schueler_id',schuelerIds)
-      .gt('updated_at', new Date(new Date().getFullYear()+'-08-01').toISOString())
-      .limit(1);
-    if(msData?.length>0){
-      alert('Nicht möglich: Es existieren bereits Lernfortschritte im neuen Schuljahr.');
-      return;
-    }
+    const{data:msData}=await sb.from('schueler_milestones').select('id').in('schueler_id',schuelerIds).limit(1);
+    if(msData?.length>0){alert('Nicht möglich: Es existieren bereits Lernfortschritte im neuen Schuljahr.');return;}
   }
-
-  // Alle Klassen des neuen Schuljahrs löschen (aktiv + inaktiv)
-  const{data:alleNeueKlassen}=await sb.from('klassen').select('id').eq('schuljahr',newSJ);
-  for(const k of alleNeueKlassen||[]){
+  for(const k of newKlassen){
     await sb.from('schueler_klassen').delete().eq('klasse_id',k.id);
     await sb.from('lehrperson_klassen').delete().eq('klasse_id',k.id);
     await sb.from('klasse_faecher').delete().eq('klasse_id',k.id);
     await sb.from('klassen').delete().eq('id',k.id);
   }
-
-  // Alte Klassen reaktivieren
   await sb.from('klassen').update({aktiv:true}).eq('schuljahr',oldSJ);
-
-  alert(`✓ Zurückgestellt. Alle Klassen ${newSJ} gelöscht, Klassen ${oldSJ} wieder aktiv.`);
+  alert('✓ Zurückgestellt. Klassen '+newSJ+' gelöscht, Klassen '+oldSJ+' wieder aktiv.');
   await loadDBFromSupabase();
   renderJahreswechsel();
 }
