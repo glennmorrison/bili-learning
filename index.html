@@ -264,6 +264,7 @@ body{font-family:var(--sans);background:var(--gray-ll);color:var(--gray);font-si
 
     <div class="nav-sec">System</div>
     <div class="nav-item" id="nav-curriculum" data-view="curriculum"><span class="ic">📋</span>Curricula</div>
+    <div class="nav-item" id="nav-jahreswechsel" data-view="jahreswechsel"><span class="ic">🔄</span>Jahreswechsel</div>
     <div class="nav-item" id="nav-schema" data-view="schema"><span class="ic">🗄</span>SQL-Schema</div>
     <div class="nav-item" id="nav-datenschutz" data-view="datenschutz"><span class="ic">🔒</span>Datenschutz</div>
   </div>
@@ -1248,13 +1249,14 @@ async function showView(v){
     lehrpersonen:['Lehrpersonen','Zuweisung zu Schulen & Klassen'],
     admins:['Admins & Rollen','Zugriffsrechte & Rollenverwaltung'],
     curriculum:['Curricula','Lernziele & Milestones pro Fach'],
+    jahreswechsel:['Jahreswechsel','Schuljahr abschliessen & Klassen weiterführen'],
     schema:['SQL-Schema','Datenbankstruktur für Entwickler'],
     datenschutz:['Datenschutz','DSGVO / DSG Compliance'],
   };
   const [title,sub]=views[v]||['Admin',''];
   document.getElementById('view-title').textContent=title;
   document.getElementById('view-sub').textContent=sub;
-  const renders={overview:renderOverview,laender:renderLaender,schulen:renderSchulen,klassen:renderKlassen,faecher:renderFaecher,schueler:renderAdminSchueler,lehrpersonen:renderLehrpersonen,admins:renderAdmins,curriculum:renderCurriculum,schema:renderSchema,datenschutz:renderDatenschutz};
+  const renders={overview:renderOverview,laender:renderLaender,schulen:renderSchulen,klassen:renderKlassen,faecher:renderFaecher,schueler:renderAdminSchueler,lehrpersonen:renderLehrpersonen,admins:renderAdmins,curriculum:renderCurriculum,jahreswechsel:renderJahreswechsel,schema:renderSchema,datenschutz:renderDatenschutz};
   if(renders[v])await renders[v]();
 }
 
@@ -2566,6 +2568,207 @@ function copySchema(){
     const btn=document.querySelector('[onclick="copySchema()"]');
     btn.textContent='✓ Kopiert!';setTimeout(()=>btn.textContent='Schema kopieren',2000);
   });
+}
+
+
+// ═══════════════════════════════════════════════════════
+// JAHRESWECHSEL
+// ═══════════════════════════════════════════════════════
+async function renderJahreswechsel(){
+  const c=document.getElementById('view-content');
+  c.innerHTML='<div class="loadbar"></div>';
+  // Aktive Klassen laden
+  let klassen=[];
+  if(sb){
+    const{data}=await sb.from('klassen')
+      .select('*, schulen(name), klasse_faecher(curriculum_id, faecher(name))')
+      .eq('aktiv',true).order('stufe');
+    klassen=data||[];
+  }
+  // Nächstes Schuljahr berechnen
+  const currentSJ=klassen[0]?.schuljahr||'2025/26';
+  const parts=currentSJ.split('/');
+  const nextSJ=`${parseInt(parts[0])+1}/${parseInt(parts[1])+1}`;
+
+  c.innerHTML=`
+    <div class="alert alert-amber" style="margin-bottom:16px;">
+      <strong>Achtung:</strong> Der Jahreswechsel verschiebt alle Schüler in neue Klassen (Stufe +1).
+      Alte Klassen bleiben inaktiv erhalten und können jederzeit wiederhergestellt werden.
+    </div>
+
+    <div class="g2" style="margin-bottom:16px;">
+      <div class="card" style="border-top:3px solid var(--teal);">
+        <div class="card-title">Aktuelles Schuljahr</div>
+        <div style="font-family:var(--serif);font-size:24px;color:var(--teal);">${currentSJ}</div>
+        <div style="font-size:12px;color:var(--gray-m);margin-top:4px;">${klassen.length} aktive Klassen</div>
+      </div>
+      <div class="card" style="border-top:3px solid var(--purple);">
+        <div class="card-title">Neues Schuljahr</div>
+        <div style="font-family:var(--serif);font-size:24px;color:var(--purple);">${nextSJ}</div>
+        <div style="font-size:12px;color:var(--gray-m);margin-top:4px;">Wird angelegt</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">Klassen-Vorschau</div>
+      <table class="tbl">
+        <thead><tr><th>Aktuelle Klasse</th><th>Schuljahr</th><th>Stufe</th><th>→</th><th>Neue Klasse</th><th>Neue Stufe</th><th>Aktion</th></tr></thead>
+        <tbody>
+          ${klassen.map(k=>`<tr>
+            <td style="font-weight:500;">${k.schulen?.name} ${k.name}</td>
+            <td>${k.schuljahr}</td>
+            <td>${k.stufe}. Klasse</td>
+            <td style="color:var(--gray-m);">→</td>
+            <td style="color:var(--purple);font-weight:500;">${k.schulen?.name} ${k.stufe+1}${k.name.replace(/[0-9]/g,'')}</td>
+            <td>${k.stufe+1}. Klasse</td>
+            <td>
+              <select class="sel" id="jw-action-${k.id}" style="font-size:12px;padding:4px 8px;">
+                <option value="promote">Aufsteigen (Stufe +1)</option>
+                <option value="repeat">Wiederholen (gleiche Stufe)</option>
+                <option value="skip">Überspringen (nicht migrieren)</option>
+              </select>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;border-top:3px solid var(--green);">
+      <div class="card-title">Jahreswechsel durchführen</div>
+      <div style="font-size:13px;color:var(--gray-m);margin-bottom:14px;">
+        Neue Klassen werden angelegt, Schüler werden zugewiesen, alte Klassen werden inaktiv gesetzt.
+        Milestone-Fortschritt bleibt vollständig erhalten.
+      </div>
+      <button class="btn btn-teal" onclick="executeJahreswechsel('${currentSJ}','${nextSJ}')">
+        🔄 Jahreswechsel ${currentSJ} → ${nextSJ} durchführen
+      </button>
+    </div>
+
+    <div class="card" style="border-top:3px solid var(--coral);">
+      <div class="card-title">Jahreswechsel rückgängig machen</div>
+      <div style="font-size:13px;color:var(--gray-m);margin-bottom:14px;">
+        Stellt den letzten Jahreswechsel zurück. Nur möglich solange keine neuen Milestone-Daten
+        im neuen Schuljahr existieren.
+      </div>
+      <button class="btn" style="background:var(--coral-l);color:var(--coral);border:1.5px solid var(--coral-l);"
+        onclick="revertJahreswechsel('${nextSJ}','${currentSJ}')">
+        ↩ Jahreswechsel zurückstellen
+      </button>
+    </div>`;
+}
+
+async function executeJahreswechsel(currentSJ, nextSJ){
+  if(!confirm(`Jahreswechsel ${currentSJ} → ${nextSJ} wirklich durchführen?
+
+Dieser Schritt kann rückgängig gemacht werden solange noch keine neuen Lernfortschritte erfasst wurden.`)) return;
+  const c=document.getElementById('view-content');
+  const statusEl=document.createElement('div');
+  statusEl.className='alert alert-teal';
+  statusEl.style.marginBottom='12px';
+  c.prepend(statusEl);
+
+  const log=(msg)=>{statusEl.innerHTML=`⏳ ${msg}`;};
+  const{data:aktiveKlassen}=await sb.from('klassen')
+    .select('*, klasse_faecher(fach_id, curriculum_id), lehrperson_klassen(lehrperson_id, fach_id, unterrichtssprache)')
+    .eq('aktiv',true).eq('schuljahr',currentSJ);
+
+  for(const k of aktiveKlassen||[]){
+    const action=document.getElementById(`jw-action-${k.id}`)?.value||'promote';
+    if(action==='skip') continue;
+
+    const newStufe=action==='promote'?k.stufe+1:k.stufe;
+    const buchstabe=k.klasse_buchstabe||'a';
+    const newName=newStufe+buchstabe;
+
+    log(`Klasse ${k.name} → ${newName} wird angelegt...`);
+
+    // Neue Klasse anlegen
+    const{data:newKlasse,error}=await sb.from('klassen').insert({
+      schule_id:k.schule_id, name:newName, stufe:newStufe,
+      schuljahr:nextSJ, klasse_buchstabe:buchstabe, aktiv:true
+    }).select().single();
+    if(error){alert('Fehler beim Anlegen: '+error.message);return;}
+
+    // klasse_faecher kopieren
+    for(const kf of k.klasse_faecher||[]){
+      // Curriculum für neue Stufe suchen
+      let newCurrId=kf.curriculum_id;
+      if(action==='promote'&&kf.curriculum_id){
+        const{data:oldCurr}=await sb.from('curricula').select('fach_id,land_id').eq('id',kf.curriculum_id).single();
+        if(oldCurr){
+          const{data:newCurr}=await sb.from('curricula').select('id')
+            .eq('fach_id',oldCurr.fach_id).eq('land_id',oldCurr.land_id).eq('stufe',newStufe).single();
+          if(newCurr) newCurrId=newCurr.id;
+        }
+      }
+      await sb.from('klasse_faecher').insert({klasse_id:newKlasse.id,fach_id:kf.fach_id,curriculum_id:newCurrId||null});
+    }
+
+    // lehrperson_klassen kopieren
+    for(const lk of k.lehrperson_klassen||[]){
+      await sb.from('lehrperson_klassen').insert({
+        lehrperson_id:lk.lehrperson_id, klasse_id:newKlasse.id,
+        fach_id:lk.fach_id, unterrichtssprache:lk.unterrichtssprache
+      });
+    }
+
+    // Schüler migrieren
+    log(`Schüler von ${k.name} → ${newName} werden verschoben...`);
+    const{data:schueler}=await sb.from('schueler_klassen').select('schueler_id').eq('klasse_id',k.id);
+    for(const s of schueler||[]){
+      await sb.from('schueler_klassen').insert({schueler_id:s.schueler_id, klasse_id:newKlasse.id});
+    }
+
+    // Alte Klasse deaktivieren
+    await sb.from('klassen').update({aktiv:false}).eq('id',k.id);
+  }
+
+  statusEl.className='alert alert-green';
+  statusEl.innerHTML=`✓ Jahreswechsel ${currentSJ} → ${nextSJ} abgeschlossen! Seite wird neu geladen...`;
+  setTimeout(()=>{loadDBFromSupabase().then(()=>renderJahreswechsel());},2000);
+}
+
+async function revertJahreswechsel(newSJ, oldSJ){
+  if(!confirm(`Jahreswechsel zurückstellen?
+
+Klassen ${newSJ} werden gelöscht, Klassen ${oldSJ} werden wieder aktiviert.
+
+Nur möglich wenn noch keine neuen Lernfortschritte erfasst wurden.`)) return;
+
+  // Prüfen ob neue Milestone-Daten existieren
+  const{data:newKlassen}=await sb.from('klassen').select('id').eq('schuljahr',newSJ).eq('aktiv',true);
+  if(!newKlassen?.length){alert('Keine aktiven Klassen für '+newSJ+' gefunden.');return;}
+
+  const newKlassenIds=newKlassen.map(k=>k.id);
+  const{data:newSchueler}=await sb.from('schueler_klassen').select('schueler_id').in('klasse_id',newKlassenIds);
+  const schuelerIds=(newSchueler||[]).map(s=>s.schueler_id);
+
+  // Milestone-Daten im neuen Schuljahr prüfen
+  if(schuelerIds.length>0){
+    const{data:msData}=await sb.from('schueler_milestones')
+      .select('id').in('schueler_id',schuelerIds)
+      .gt('updated_at', new Date(new Date().getFullYear()+'-08-01').toISOString())
+      .limit(1);
+    if(msData?.length>0){
+      alert('Nicht möglich: Es existieren bereits Lernfortschritte im neuen Schuljahr.');
+      return;
+    }
+  }
+
+  // Neue Klassen + schueler_klassen löschen
+  for(const kid of newKlassenIds){
+    await sb.from('schueler_klassen').delete().eq('klasse_id',kid);
+    await sb.from('lehrperson_klassen').delete().eq('klasse_id',kid);
+    await sb.from('klasse_faecher').delete().eq('klasse_id',kid);
+    await sb.from('klassen').delete().eq('id',kid);
+  }
+
+  // Alte Klassen reaktivieren
+  await sb.from('klassen').update({aktiv:true}).eq('schuljahr',oldSJ);
+
+  alert(`✓ Zurückgestellt. Klassen ${oldSJ} sind wieder aktiv.`);
+  await loadDBFromSupabase();
+  renderJahreswechsel();
 }
 
 // ═══════════════════════════════════════════════════════
