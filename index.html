@@ -1146,6 +1146,7 @@ async function loadDBFromSupabase() {
       faecher: (x.klasse_faecher||[]).map(fi=>fi.faecher?.name).filter(Boolean),
       lehrpersonIds: (lk.data||[]).filter(r=>r.klasse_id===x.id).map(r=>r.lehrperson_id),
       lehrpersonSprachen: Object.fromEntries((lk.data||[]).filter(r=>r.klasse_id===x.id).map(r=>[r.lehrperson_id,r.unterrichtssprache])),
+      curriculumId: x.curriculum_id||null,
       schuelerCount: 0
     }));
     if(f && f.data && f.data.length>0) DB.faecher_pool = f.data.map(x=>x.name);
@@ -1164,12 +1165,17 @@ let SB_MS = []; // Milestones from Supabase (replaces hardcoded MS array)
 async function loadCurriculumForTeacher() {
   if(!sb || DEMO) return;
   try {
-    // Load milestones for current teacher's classes
-    // For now load all active curricula milestones
-    const {data, error} = await sb
-      .from('milestones')
-      .select('*, curricula(name, stufe, fach_id, land_id)')
-      .order('sort_order');
+    // Curriculum der Klasse des Lehrers laden
+    const {data:lkData}=await sb.from('lehrperson_klassen').select('klasse_id').eq('lehrperson_id',CU.id);
+    const klassenIds=(lkData||[]).map(x=>x.klasse_id);
+    let curriculumId=null;
+    if(klassenIds.length>0){
+      const {data:klData}=await sb.from('klassen').select('curriculum_id').in('id',klassenIds).not('curriculum_id','is',null).limit(1);
+      curriculumId=klData?.[0]?.curriculum_id||null;
+    }
+    const query=sb.from('milestones').select('*, curricula(name, stufe, fach_id, land_id)').order('sort_order');
+    if(curriculumId) query.eq('curriculum_id',curriculumId);
+    const {data, error} = await query;
     if(data && data.length > 0) {
       SB_MS = data.map(m => ({
         id: m.code,
@@ -1601,14 +1607,24 @@ function openNewKlasseModal(){
     </div>`);
 }
 
-function openEditKlasseModal(id){
+async function openEditKlasseModal(id){
   const k=DB.klassen.find(x=>x.id===id);
   const schule=DB.schulen.find(s=>s.id===k.schuleId);
   const sprachen=['DE','EN','FR','IT','ES','PT'];
+  // Curricula laden
+  let curricula=[];
+  if(sb){const{data}=await sb.from('curricula').select('id,name,stufe,status');curricula=data||[];}
   openModal(`
     <div class="modal-title">✏️ ${schule?.name} ${k.name}</div>
     <div class="modal-sub">Klasse bearbeiten — ${k.schuljahr}</div>
     <div class="field"><label>Klassenbezeichnung</label><input class="inp" value="${k.name}" id="m-kl-name"></div>
+    <div class="field">
+      <label>Curriculum</label>
+      <select class="sel" id="m-kl-curr">
+        <option value="">— Kein Curriculum —</option>
+        ${curricula.map(c=>`<option value="${c.id}" ${k.curriculumId===c.id?'selected':''}>${c.name} (Stufe ${c.stufe})</option>`).join('')}
+      </select>
+    </div>
     <div class="field">
       <label>Fächer</label>
       <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;" id="m-fach-chips">
@@ -1671,8 +1687,9 @@ async function saveEditKlasse(id){
     id:cb.value,
     lang:document.getElementById('lp-lang-'+cb.value)?.value||'DE'
   }));
+  const currId=document.getElementById('m-kl-curr')?.value||null;
   if(sb){
-    await sb.from('klassen').update({name}).eq('id',id);
+    await sb.from('klassen').update({name, curriculum_id:currId||null}).eq('id',id);
     await sb.from('lehrperson_klassen').delete().eq('klasse_id',id);
     for(const lp of selLps){
       await sb.from('lehrperson_klassen').insert({
