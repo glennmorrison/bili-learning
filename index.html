@@ -565,7 +565,8 @@ async function renderDash(){
   const totalMs = msStatus.length;
   const doneMs = msStatus.filter(m=>m.validiert_status>=2).length;
   const avgProgress = totalMs>0 ? Math.round(doneMs/totalMs*100) : 0;
-  const activeMS = getMS();
+  await loadCurriculumForTeacher();
+    const activeMS = getMS();
   // Fortschritt pro Curriculum
   const curriculaMap={};
   activeMS.forEach(m=>{
@@ -1229,12 +1230,15 @@ let SB_MS = []; // Milestones from Supabase (replaces hardcoded MS array)
 async function loadCurriculumForTeacher() {
   if(!sb || DEMO) return;
   try {
-    // Curricula aus klasse_faecher der Klassen des Lehrers laden
+    // Curricula aus klasse_faecher der gewählten Klasse laden
     const {data:lkData}=await sb.from('lehrperson_klassen').select('klasse_id').eq('lehrperson_id',CU.id);
-    const klassenIds=(lkData||[]).map(x=>x.klasse_id);
+    const alleKlassenIds=(lkData||[]).map(x=>x.klasse_id);
+    // Gewählte Klasse bevorzugen, sonst alle
+    const targetKlasseId=window._dashKlasseId&&alleKlassenIds.includes(window._dashKlasseId)
+      ?[window._dashKlasseId]:alleKlassenIds;
     let curriculumIds=[];
-    if(klassenIds.length>0){
-      const {data:kfData}=await sb.from('klasse_faecher').select('curriculum_id').in('klasse_id',klassenIds).not('curriculum_id','is',null);
+    if(targetKlasseId.length>0){
+      const {data:kfData}=await sb.from('klasse_faecher').select('curriculum_id').in('klasse_id',targetKlasseId).not('curriculum_id','is',null);
       curriculumIds=[...new Set((kfData||[]).map(x=>x.curriculum_id).filter(Boolean))];
     }
     let query=sb.from('milestones').select('*, curricula(name, stufe, fach_id, land_id, faecher(name))').order('sort_order');
