@@ -138,61 +138,17 @@ body{font-family:var(--sans);background:var(--gray-ll);color:var(--gray);font-si
 .tab:hover{color:var(--gray);}
 .tab.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:500;}
 </style>
-</head>
-<body>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
 
-<div class="topbar">
-  <div class="topbar-brand">
-    <div class="topbar-logo">SIS AI Learning</div>
-    <div class="topbar-sep"></div>
-    <div class="topbar-page">Admin — Organisationsverwaltung</div>
-  </div>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <span class="role-badge">Super-Admin</span>
-    <span style="font-size:12px;opacity:.65;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c2a3a6afabac82b1abb1eca1aa">[email&#160;protected]</a></span>
-  </div>
-</div>
+// ═══════════════════════════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════════════════════════
+const SB_URL = 'https://kcvfsmugfsfupzccynoi.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjdmZzbXVnZnNmdXB6Y2N5bm9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzkwNzgsImV4cCI6MjA4OTYxNTA3OH0.aUfTFVBpgYTCna57M6kUH7VgUMcfgyPKjRqpm6OvNs4';
+const SB_FN = 'https://kcvfsmugfsfupzccynoi.supabase.co/functions/v1';
+const sb = supabase.createClient(SB_URL, SB_KEY);
 
-<div class="layout">
-
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="nav-sec">Organisation</div>
-    <div class="nav-item active" id="nav-overview" onclick="showView('overview')"><span class="ic">🏛</span>Übersicht</div>
-    <div class="nav-item" id="nav-laender" onclick="showView('laender')"><span class="ic">🌍</span>Länder</div>
-    <div class="nav-item" id="nav-schulen" onclick="showView('schulen')"><span class="ic">🏫</span>Schulen</div>
-    <div class="nav-item" id="nav-klassen" onclick="showView('klassen')"><span class="ic">📚</span>Klassen & Fächer</div>
-
-    <div class="nav-sec">Personen</div>
-    <div class="nav-item" id="nav-schueler" onclick="showView('schueler')"><span class="ic">👥</span>Schüler-Dossiers</div>
-    <div class="nav-item" id="nav-lehrpersonen" onclick="showView('lehrpersonen')"><span class="ic">👩‍🏫</span>Lehrpersonen</div>
-    <div class="nav-item" id="nav-admins" onclick="showView('admins')"><span class="ic">🔑</span>Admins & Rollen</div>
-
-    <div class="nav-sec">System</div>
-    <div class="nav-item" id="nav-curriculum" onclick="showView('curriculum')"><span class="ic">📋</span>Curricula</div>
-    <div class="nav-item" id="nav-schema" onclick="showView('schema')"><span class="ic">🗄</span>SQL-Schema</div>
-    <div class="nav-item" id="nav-datenschutz" onclick="showView('datenschutz')"><span class="ic">🔒</span>Datenschutz</div>
-  </div>
-
-  <!-- Main -->
-  <div class="main">
-    <div class="main-header">
-      <div>
-        <div class="main-title" id="view-title">Übersicht</div>
-        <div class="main-sub" id="view-sub">SIS Swiss International School — Globale Verwaltung</div>
-      </div>
-      <div id="view-actions"></div>
-    </div>
-    <div class="content" id="view-content"></div>
-  </div>
-</div>
-
-<!-- Modal -->
-<div class="modal-bg" id="modal-bg" onclick="if(event.target===this)closeModal()">
-  <div class="modal" id="modal-content"></div>
-</div>
-
-<script data-cfasync="false">
 // ═══════════════════════════════════════════════════════
 // DATA MODEL (simulated — replaces Supabase in demo)
 // ═══════════════════════════════════════════════════════
@@ -247,14 +203,6 @@ const DB = {
 
 const LANG_LABELS = {DE:'Deutsch',EN:'English',FR:'Français',IT:'Italiano'};
 const ALL_LANGS = ['DE','EN','FR','IT','ES','ZH'];
-
-// ═══════════════════════════════════════════════════════
-// SUPABASE INIT
-// ═══════════════════════════════════════════════════════
-const SB_URL = 'https://kcvfsmugfsfupzccynoi.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjdmZzbXVnZnNmdXB6Y2N5bm9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzkwNzgsImV4cCI6MjA4OTYxNTA3OH0.aUfTFVBpgYTCna57M6kUH7VgUMcfgyPKjRqpm6OvNs4';
-const SB_FN = 'https://kcvfsmugfsfupzccynoi.supabase.co/functions/v1';
-const sb = supabase.createClient(SB_URL, SB_KEY);
 
 // ═══════════════════════════════════════════════════════
 // NAVIGATION
@@ -1318,3 +1266,66 @@ function closeModal(){document.getElementById('modal-bg').classList.remove('open
 
 // ═══════════════════════════════════════════════════════
 //
+// INIT
+// ═══════════════════════════════════════════════════════
+showView('overview');
+
+});
+</script>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo">SIS AI Learning</div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-page">Admin — Organisationsverwaltung</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="role-badge">Super-Admin</span>
+    <span style="font-size:12px;opacity:.65;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c2a3a6afabac82b1abb1eca1aa">[email&#160;protected]</a></span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="nav-sec">Organisation</div>
+    <div class="nav-item active" id="nav-overview" onclick="showView('overview')"><span class="ic">🏛</span>Übersicht</div>
+    <div class="nav-item" id="nav-laender" onclick="showView('laender')"><span class="ic">🌍</span>Länder</div>
+    <div class="nav-item" id="nav-schulen" onclick="showView('schulen')"><span class="ic">🏫</span>Schulen</div>
+    <div class="nav-item" id="nav-klassen" onclick="showView('klassen')"><span class="ic">📚</span>Klassen & Fächer</div>
+
+    <div class="nav-sec">Personen</div>
+    <div class="nav-item" id="nav-schueler" onclick="showView('schueler')"><span class="ic">👥</span>Schüler-Dossiers</div>
+    <div class="nav-item" id="nav-lehrpersonen" onclick="showView('lehrpersonen')"><span class="ic">👩‍🏫</span>Lehrpersonen</div>
+    <div class="nav-item" id="nav-admins" onclick="showView('admins')"><span class="ic">🔑</span>Admins & Rollen</div>
+
+    <div class="nav-sec">System</div>
+    <div class="nav-item" id="nav-curriculum" onclick="showView('curriculum')"><span class="ic">📋</span>Curricula</div>
+    <div class="nav-item" id="nav-schema" onclick="showView('schema')"><span class="ic">🗄</span>SQL-Schema</div>
+    <div class="nav-item" id="nav-datenschutz" onclick="showView('datenschutz')"><span class="ic">🔒</span>Datenschutz</div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="main-header">
+      <div>
+        <div class="main-title" id="view-title">Übersicht</div>
+        <div class="main-sub" id="view-sub">SIS Swiss International School — Globale Verwaltung</div>
+      </div>
+      <div id="view-actions"></div>
+    </div>
+    <div class="content" id="view-content"></div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+
+</body>
+</html>
