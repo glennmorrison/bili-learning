@@ -8,7 +8,7 @@
 
 ## 🎯 Projekt-Kontext
 
-**Auftraggeber:** SIS Swiss International School (intern: "Bili")
+**Projekt:** Bili Learning Platform (interner Pilot)
 **Pilot:** Mathematik Klasse 5b, Zyklus 2 (Klassen 5–6)
 **Sprachen:** Deutsch / Englisch (bilingual), später FR + IT
 **Lehrplan:** LP21 (Schweiz), KMK (Deutschland), AHS (Österreich)
