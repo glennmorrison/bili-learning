@@ -655,9 +655,25 @@ async function renderCurr(){
   c.innerHTML='<div class="loadbar"></div>';
   await loadCurriculumForTeacher();
   const activeMS=getMS();
-  if(activeMS.length===0){c.innerHTML='<div class="card" style="text-align:center;padding:40px;color:var(--gray-m);">Kein Curriculum geladen.</div>';return;}
+  if(activeMS.length===0){
+    c.innerHTML='<div class="card" style="text-align:center;padding:40px;color:var(--gray-m);">Kein Curriculum geladen.</div>';
+    return;
+  }
+  // Curriculum-Info aus erstem Milestone holen
+  const currInfo=activeMS[0]?.curricula;
+  const currHeader=currInfo
+    ?`<div class="card" style="margin-bottom:14px;border-top:3px solid var(--teal);display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-family:var(--serif);font-size:17px;">${currInfo.name||'Curriculum'}</div>
+          <div style="font-size:11px;color:var(--gray-m);margin-top:2px;">
+            Stufe ${currInfo.stufe||'—'} · LP21 · ${activeMS.length} Milestones
+          </div>
+        </div>
+        <span class="pill pill-teal">Aktiv</span>
+      </div>`
+    :'';
   const units=[...new Set(activeMS.map(m=>m.unit))];
-  c.innerHTML=units.map(u=>{
+  c.innerHTML=currHeader+units.map(u=>{
     const ms=activeMS.filter(m=>m.unit===u);
     return`<div class="card" style="margin-bottom:14px;">
       <div class="card-title">${msUnit(u)}</div>
@@ -1171,6 +1187,7 @@ async function loadCurriculumForTeacher() {
         pre: [],
         lp21: m.lp21_ref || '',
         sb_id: m.id,
+        curricula: m.curricula||null,
       }));
       console.log('Milestones from Supabase:', SB_MS.length);
     }
