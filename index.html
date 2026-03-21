@@ -543,8 +543,11 @@ async function renderDash(){
     });
     msStatus = msRes.data||[];
     const myKlassenIds = myKlassen.map(lk=>lk.klassen?.id).filter(Boolean);
-    if(myKlassenIds.length>0){
-      const{data:skData}=await sb.from('schueler_klassen').select('schueler_id').in('klasse_id',myKlassenIds);
+    // Schüler nur aus gewählter Klasse laden
+    const filterKlasseId=window._dashKlasseId&&myKlassenIds.includes(window._dashKlasseId)
+      ?window._dashKlasseId:myKlassenIds[0];
+    if(filterKlasseId){
+      const{data:skData}=await sb.from('schueler_klassen').select('schueler_id').eq('klasse_id',filterKlasseId);
       const schuelerIds=[...new Set((skData||[]).map(x=>x.schueler_id))];
       if(schuelerIds.length>0){
         const{data:sData}=await sb.from('profiles').select('*').in('id',schuelerIds);
@@ -555,6 +558,7 @@ async function renderDash(){
 
   // Aktive Klasse (erste oder gewählte)
   const selKlasseId=window._dashKlasseId||(myKlassen[0]?.klassen?.id||null);
+  if(!window._dashKlasseId && selKlasseId) window._dashKlasseId=selKlasseId;
   const selKlasse=myKlassen.find(lk=>lk.klassen?.id===selKlasseId)||myKlassen[0];
 
   // Compute stats
@@ -562,16 +566,18 @@ async function renderDash(){
   const doneMs = msStatus.filter(m=>m.validiert_status>=2).length;
   const avgProgress = totalMs>0 ? Math.round(doneMs/totalMs*100) : 0;
   const activeMS = getMS();
-  // Fortschritt pro Fach (Curriculum-Gruppe)
+  // Fortschritt pro Curriculum
   const curriculaMap={};
   activeMS.forEach(m=>{
-    const cname=m.curricula?.name||m.curricula?.faecher?.name||'Curriculum';
+    const cname=m.curricula?.name||(m.curricula?.faecher?.name?m.curricula.faecher.name+' Curriculum':'Curriculum');
     if(!curriculaMap[cname]) curriculaMap[cname]=[];
     curriculaMap[cname].push(m);
   });
   const fachProgress=Object.entries(curriculaMap).map(([name,ms])=>{
+    const msIds=new Set(ms.map(m=>m.sb_id));
+    const relevantStatus=msStatus.filter(st=>students.some(s=>s.id===st.schueler_id));
     const total=ms.length*Math.max(students.length,1);
-    const done=ms.reduce((a,m)=>a+msStatus.filter(st=>st.validiert_status>=2&&students.some(s=>s.id===st.schueler_id)).length,0);
+    const done=relevantStatus.filter(st=>st.validiert_status>=2&&msIds.has(st.milestone_id)).length;
     return{name, pct:total>0?Math.round(done/total*100):0};
   });
 
