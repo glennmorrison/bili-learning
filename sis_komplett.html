@@ -161,6 +161,118 @@ const MS=[
   {id:"MS12.2",unit:"Daten",title:"Diagramme",en:"Diagrams",bloom:"Anwenden",niv:1,pre:["MS12.1"]},
 ];
 
+
+// ═══════════════════════════════════════════════════════
+// i18n — INTERFACE TRANSLATIONS
+// Add new language: just add a new block below
+// ═══════════════════════════════════════════════════════
+const T = {
+  DE: {
+    // Navigation
+    dashboard: 'Dashboard', schueler: 'Schüler', curriculum: 'Curriculum',
+    generator: 'Aufgabenblatt', upload: 'Upload', einstellungen: 'Einstellungen',
+    ausloggen: 'Ausloggen',
+    // Roles
+    lehrperson: 'Lehrperson', schulleitung: 'Schulleitung',
+    laender_admin: 'Länder-Admin', super_admin: 'Admin', schueler_rolle: 'Schüler/in',
+    // Dashboard
+    schuelerinnen: 'Schülerinnen & Schüler', fortschritt: 'Ø Fortschritt',
+    alerts: 'Alerts', vertiefung: 'Vertiefung',
+    supabase_verbunden: '✓ Supabase 🇨🇭 verbunden. Noch keine Schüler erfasst.',
+    erste_schritte: '🚀 Erste Schritte',
+    // Student interface
+    hallo: 'Hallo', ueben: 'Üben', progress: 'Fortschritt',
+    beraeit: '🔓 Bereit', in_arbeit: '▶ In Arbeit', luecken: '⚠ Lücken',
+    erledigt: '✓ Erledigt', gesperrt: '🔒 Gesperrt',
+    los: 'Los →', zurueck: '← Zurück',
+    deine_antwort: 'Deine Antwort…', pruefen: 'Prüfen', tipp: 'Tipp',
+    richtig: '🎉 Richtig!', fast: '🤔 Fast!', feedback: 'Feedback',
+    einloesen: 'Einlösen', gesamt: 'Gesamt', milestones: 'Milestones',
+    // Settings
+    schueler_anlegen: 'Schüler anlegen', vorname: 'Vorname', nachname: 'Nachname',
+    sprache: 'Sprache', passwort: 'Passwort (temporär)', speichern: 'Speichern & neu laden',
+  },
+  EN: {
+    // Navigation
+    dashboard: 'Dashboard', schueler: 'Students', curriculum: 'Curriculum',
+    generator: 'Worksheet', upload: 'Upload', einstellungen: 'Settings',
+    ausloggen: 'Log out',
+    // Roles
+    lehrperson: 'Teacher', schulleitung: 'Principal',
+    laender_admin: 'Country Admin', super_admin: 'Admin', schueler_rolle: 'Student',
+    // Dashboard
+    schuelerinnen: 'Students', fortschritt: 'Avg Progress',
+    alerts: 'Alerts', vertiefung: 'Advanced',
+    supabase_verbunden: '✓ Supabase 🇨🇭 connected. No students yet.',
+    erste_schritte: '🚀 First Steps',
+    // Student interface
+    hallo: 'Hello', ueben: 'Practice', progress: 'Progress',
+    beraeit: '🔓 Ready', in_arbeit: '▶ In progress', luecken: '⚠ Gaps',
+    erledigt: '✓ Done', gesperrt: '🔒 Locked',
+    los: 'Go →', zurueck: '← Back',
+    deine_antwort: 'Your answer…', pruefen: 'Check', tipp: 'Hint',
+    richtig: '🎉 Correct!', fast: '🤔 Almost!', feedback: 'Feedback',
+    einloesen: 'Collect', gesamt: 'Overall', milestones: 'Milestones',
+    // Settings
+    schueler_anlegen: 'Add Student', vorname: 'First name', nachname: 'Last name',
+    sprache: 'Language', passwort: 'Password (temporary)', speichern: 'Save & reload',
+  },
+  FR: {
+    // Navigation
+    dashboard: 'Tableau de bord', schueler: 'Élèves', curriculum: 'Curriculum',
+    generator: 'Fiche de travail', upload: 'Télécharger', einstellungen: 'Paramètres',
+    ausloggen: 'Déconnexion',
+    // Roles
+    lehrperson: 'Enseignant(e)', schulleitung: 'Direction',
+    laender_admin: 'Admin pays', super_admin: 'Admin', schueler_rolle: 'Élève',
+    // Dashboard
+    schuelerinnen: 'Élèves', fortschritt: 'Progrès moyen',
+    alerts: 'Alertes', vertiefung: 'Approfondissement',
+    supabase_verbunden: '✓ Supabase 🇨🇭 connecté. Aucun élève encore.',
+    erste_schritte: '🚀 Premiers pas',
+    // Student interface
+    hallo: 'Bonjour', ueben: 'Exercices', progress: 'Progrès',
+    beraeit: '🔓 Prêt', in_arbeit: '▶ En cours', luecken: '⚠ Lacunes',
+    erledigt: '✓ Terminé', gesperrt: '🔒 Verrouillé',
+    los: 'Aller →', zurueck: '← Retour',
+    deine_antwort: 'Ta réponse…', pruefen: 'Vérifier', tipp: 'Indice',
+    richtig: '🎉 Correct!', fast: '🤔 Presque!', feedback: 'Retour',
+    einloesen: 'Collecter', gesamt: 'Global', milestones: 'Jalons',
+    // Settings
+    schueler_anlegen: 'Ajouter élève', vorname: 'Prénom', nachname: 'Nom',
+    sprache: 'Langue', passwort: 'Mot de passe (temporaire)', speichern: 'Enregistrer',
+  }
+};
+
+// Get current language from user profile or localStorage
+function getLang() {
+  return (CU && CU.sprache && T[CU.sprache]) ? CU.sprache : 
+         localStorage.getItem('bili_lang') || 'DE';
+}
+
+// Translate helper
+function t(key) {
+  const lang = getLang();
+  return (T[lang] && T[lang][key]) ? T[lang][key] : (T['DE'][key] || key);
+}
+
+// Apply language to entire interface
+function applyLang() {
+  const lang = getLang();
+  // Nav items
+  const navMap = {
+    'tnav-dashboard': 'dashboard', 'tnav-schueler': 'schueler',
+    'tnav-curriculum': 'curriculum', 'tnav-generator': 'generator',
+    'tnav-upload': 'upload', 'tnav-setup': 'einstellungen'
+  };
+  Object.entries(navMap).forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if(el) el.querySelector('.ic') ? 
+      el.innerHTML = el.innerHTML.replace(/(?<=<\/span>).*/, t(key)) : 
+      el.textContent = t(key);
+  });
+}
+
 // ─── STATE ──────────────────────────────────────────────
 let CU = null;
 let DEMO = false;
@@ -542,9 +654,25 @@ async function saveManuell(){
 }
 
 // ─── SETUP ──────────────────────────────────────────────
+
+function setLang(lang) {
+  localStorage.setItem('bili_lang', lang);
+  if(CU) CU.sprache = lang;
+  tNav('setup');
+}
+
 function renderSetup(){
   const c=document.getElementById('t-content');
   c.innerHTML=`
+
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title">Interface-Sprache</div>
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            ${['DE','EN','FR'].map(l => `<button style="padding:8px 16px;border:1.5px solid ${getLang()===l?'var(--teal)':'var(--border)'};border-radius:var(--rs);font-size:13px;font-weight:500;cursor:pointer;background:${getLang()===l?'var(--teal-l)':'#fff'};color:${getLang()===l?'var(--teal)':'var(--gray-m)'};" onclick="setLang('${l}')">${l}</button>`).join('')}
+          </div>
+          <div style="font-size:12px;color:var(--gray-m);">Sprache des Interfaces. Aufgaben werden in der Schüler-Sprache generiert.</div>
+        </div>
+
     <div class="g2">
       <div class="card">
         <div class="card-title">Supabase Key konfigurieren</div>
