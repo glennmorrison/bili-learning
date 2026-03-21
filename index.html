@@ -1563,6 +1563,7 @@ function openNewKlasseModal(){
 function openEditKlasseModal(id){
   const k=DB.klassen.find(x=>x.id===id);
   const schule=DB.schulen.find(s=>s.id===k.schuleId);
+  const sprachen=['DE','EN','FR','IT','ES','PT'];
   openModal(`
     <div class="modal-title">✏️ ${schule?.name} ${k.name}</div>
     <div class="modal-sub">Klasse bearbeiten — ${k.schuljahr}</div>
@@ -1573,10 +1574,21 @@ function openEditKlasseModal(id){
         ${DB.faecher_pool.map(f=>`<div class="lang-chip ${k.faecher.includes(f)?'on':''}" onclick="this.classList.toggle('on')" style="font-size:12px;">${f}</div>`).join('')}
       </div>
     </div>
-    <div class="field"><label>Lehrpersonen</label>
-      <select class="sel" id="m-kl-lp" multiple style="min-height:80px;">
-        ${DB.lehrpersonen.map(l=>`<option value="${l.id}" ${k.lehrpersonIds.includes(l.id)?'selected':''}>${l.name}</option>`).join('')}
-      </select>
+    <div class="field">
+      <label>Lehrpersonen & Unterrichtssprache</label>
+      <div id="m-kl-lp-list" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+        ${DB.lehrpersonen.map(l=>{
+          const isSelected=k.lehrpersonIds.includes(l.id);
+          const currentLang=k.lehrpersonSprachen?.[l.id]||'DE';
+          return`<div style="display:flex;align-items:center;gap:8px;padding:8px;border:1.5px solid var(--border);border-radius:var(--rs);background:#fff;">
+            <input type="checkbox" id="lp-cb-${l.id}" value="${l.id}" ${isSelected?'checked':''} style="width:15px;height:15px;accent-color:var(--teal);">
+            <label for="lp-cb-${l.id}" style="flex:1;font-size:13px;cursor:pointer;">${l.name}</label>
+            <select class="sel" id="lp-lang-${l.id}" style="width:80px;padding:5px 8px;font-size:12px;">
+              ${sprachen.map(s=>`<option value="${s}" ${currentLang===s?'selected':''}>${s}</option>`).join('')}
+            </select>
+          </div>`;
+        }).join('')}
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Abbrechen</button>
@@ -1613,15 +1625,17 @@ async function saveNewKlasse(){
 async function saveEditKlasse(id){
   const name=document.getElementById('m-kl-name').value;
   const faecher=[...document.querySelectorAll('#m-fach-chips .lang-chip.on')].map(el=>el.textContent);
-  const selLps=[...document.getElementById('m-kl-lp').selectedOptions].map(o=>o.value);
+  // Collect checked lehrpersonen with their selected language
+  const selLps=[...document.querySelectorAll('#m-kl-lp-list input[type=checkbox]:checked')].map(cb=>({
+    id:cb.value,
+    lang:document.getElementById('lp-lang-'+cb.value)?.value||'DE'
+  }));
   if(sb){
-    // Update klasse name
     await sb.from('klassen').update({name}).eq('id',id);
-    // Delete existing lehrperson_klassen and re-insert
     await sb.from('lehrperson_klassen').delete().eq('klasse_id',id);
-    for(const lpId of selLps){
+    for(const lp of selLps){
       await sb.from('lehrperson_klassen').insert({
-        lehrperson_id:lpId, klasse_id:id, unterrichtssprache:'DE'
+        lehrperson_id:lp.id, klasse_id:id, unterrichtssprache:lp.lang
       });
     }
   }
@@ -1726,11 +1740,73 @@ async function renderAdminSchueler(){
               <td>${land?isoToFlag(land.iso_code):''} ${schule?.name||'—'}</td>
               <td><span class="pill pill-purple" style="font-size:10px;">${s.sprache||'DE'}</span></td>
               <td><span class="pill ${s.aktiv?'pill-green':'pill-amber'}" style="font-size:10px;">${s.aktiv?'Aktiv':'Inaktiv'}</span></td>
-              <td><button class="btn btn-ghost btn-sm" onclick="alert('Dossier coming soon')">Dossier</button></td>
+              <td><button class="btn btn-ghost btn-sm" onclick="openEditSchuelerModal('${s.id}')">Bearbeiten</button></td>
             </tr>`;}).join('')}
         </tbody>
       </table>`}
     </div>`;
+}
+
+async function openEditSchuelerModal(id){
+  // Load fresh data from Supabase
+  let s=null;
+  if(sb){
+    const{data}=await sb.from('profiles').select('*, schueler_klassen(klasse_id)').eq('id',id).single();
+    s=data;
+  }
+  if(!s){alert('Schüler nicht gefunden.');return;}
+  const currentKlId=s.schueler_klassen?.[0]?.klasse_id||'';
+  const sprachen=['DE','EN','FR','IT','ES','PT'];
+  openModal(`
+    <div class="modal-title">✏️ ${s.vorname} ${s.nachname}</div>
+    <div class="modal-sub">${s.email}</div>
+    <div class="g2">
+      <div class="field"><label>Vorname</label><input class="inp" id="es-fn" value="${s.vorname||''}"></div>
+      <div class="field"><label>Nachname</label><input class="inp" id="es-ln" value="${s.nachname||''}"></div>
+    </div>
+    <div class="field"><label>Klasse</label>
+      <select class="sel" id="es-kl">
+        <option value="">— Keine Klasse —</option>
+        ${DB.klassen.map(k=>{const sc=DB.schulen.find(x=>x.id===k.schuleId);return`<option value="${k.id}" ${currentKlId===k.id?'selected':''}>${sc?.name||''} ${k.name} (${k.schuljahr})</option>`;}).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Sprache</label>
+      <select class="sel" id="es-lang">
+        ${sprachen.map(l=>`<option value="${l}" ${s.sprache===l?'selected':''}>${l}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Status</label>
+      <select class="sel" id="es-aktiv">
+        <option value="true" ${s.aktiv?'selected':''}>Aktiv</option>
+        <option value="false" ${!s.aktiv?'selected':''}>Inaktiv</option>
+      </select>
+    </div>
+    <div id="es-res" style="margin-bottom:8px;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-teal" onclick="saveEditSchueler('${id}','${currentKlId}')">Speichern</button>
+    </div>`);
+}
+
+async function saveEditSchueler(id, oldKlId){
+  const fn=document.getElementById('es-fn').value.trim();
+  const ln=document.getElementById('es-ln').value.trim();
+  const klId=document.getElementById('es-kl').value;
+  const lang=document.getElementById('es-lang').value;
+  const aktiv=document.getElementById('es-aktiv').value==='true';
+  const res=document.getElementById('es-res');
+  if(!fn||!ln){res.innerHTML='<div class="alert alert-red">Vorname und Nachname erforderlich.</div>';return;}
+  if(!sb){return;}
+  // Update profile
+  const{error}=await sb.from('profiles').update({vorname:fn,nachname:ln,sprache:lang,aktiv}).eq('id',id);
+  if(error){res.innerHTML=`<div class="alert alert-red">${error.message}</div>`;return;}
+  // Update schueler_klassen
+  await sb.from('schueler_klassen').delete().eq('schueler_id',id);
+  if(klId){
+    await sb.from('schueler_klassen').insert({schueler_id:id,klasse_id:klId});
+  }
+  res.innerHTML='<div class="alert alert-green">✓ Gespeichert!</div>';
+  setTimeout(()=>{closeModal();renderAdminSchueler();},1000);
 }
 
 function filterSchuelerLive(q){
