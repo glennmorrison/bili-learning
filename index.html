@@ -659,32 +659,40 @@ async function renderCurr(){
     c.innerHTML='<div class="card" style="text-align:center;padding:40px;color:var(--gray-m);">Kein Curriculum geladen.</div>';
     return;
   }
-  // Curriculum-Info aus erstem Milestone holen
-  const currInfo=activeMS[0]?.curricula;
-  const currHeader=currInfo
-    ?`<div class="card" style="margin-bottom:14px;border-top:3px solid var(--teal);display:flex;align-items:center;justify-content:space-between;">
-        <div>
-          <div style="font-family:var(--serif);font-size:17px;">${currInfo.name||'Curriculum'}</div>
-          <div style="font-size:11px;color:var(--gray-m);margin-top:2px;">
-            Stufe ${currInfo.stufe||'—'} · LP21 · ${activeMS.length} Milestones
-          </div>
-        </div>
-        <span class="pill pill-teal">Aktiv</span>
-      </div>`
-    :'';
+  // Nach Curriculum gruppieren
+  const curriculaMap={};
+  activeMS.forEach(m=>{
+    const cid=m.sb_id?m.curriculum_id:m.curricula?.id||'default';
+    const cname=m.curricula?.name||'Curriculum';
+    const cfach=m.curricula?.faecher?.name||'';
+    if(!curriculaMap[cname]) curriculaMap[cname]={name:cname,fach:cfach,stufe:m.curricula?.stufe||'',milestones:[]};
+    curriculaMap[cname].milestones.push(m);
+  });
+  const curricGroups=Object.values(curriculaMap);
   const units=[...new Set(activeMS.map(m=>m.unit))];
-  c.innerHTML=currHeader+units.map(u=>{
-    const ms=activeMS.filter(m=>m.unit===u);
-    return`<div class="card" style="margin-bottom:14px;">
-      <div class="card-title">${msUnit(u)}</div>
-      <table class="tbl"><thead><tr><th>ID</th><th>${t('milestones')}</th><th>Bloom</th><th>★</th><th>Prereq.</th></tr></thead>
-      <tbody>${ms.map(m=>`<tr>
-        <td><code style="font-size:10px;background:var(--gray-l);padding:1px 5px;border-radius:3px;">${m.id}</code></td>
-        <td style="font-weight:500;">${msTitle(m)}</td>
-        <td style="font-size:11px;">${msBloom(m.bloom)}</td>
-        <td>${'★'.repeat(m.niv)}</td>
-        <td style="font-size:11px;color:var(--gray-m);">${(m.pre||[]).join(', ')||'—'}</td>
-      </tr>`).join('')}</tbody></table>
+  c.innerHTML=curricGroups.map(cg=>{
+    const cgUnits=[...new Set(cg.milestones.map(m=>m.unit))];
+    return`<div style="margin-bottom:20px;">
+      <div class="card" style="margin-bottom:10px;border-top:3px solid var(--teal);display:flex;align-items:center;justify-content:space-between;padding:14px 18px;">
+        <div>
+          <div style="font-family:var(--serif);font-size:16px;">${cg.name}</div>
+          <div style="font-size:11px;color:var(--gray-m);margin-top:2px;">Stufe ${cg.stufe} · ${cg.milestones.length} Milestones</div>
+        </div>
+        <span class="pill pill-teal" style="font-size:10px;">Aktiv</span>
+      </div>
+      ${cgUnits.map(u=>{
+        const ms=cg.milestones.filter(m=>m.unit===u);
+        return`<div class="card" style="margin-bottom:10px;">
+          <div class="card-title">${msUnit(u)}</div>
+          <table class="tbl"><thead><tr><th>ID</th><th>${t('milestones')}</th><th>Bloom</th><th>★</th></tr></thead>
+          <tbody>${ms.map(m=>`<tr>
+            <td><code style="font-size:10px;background:var(--gray-l);padding:1px 5px;border-radius:3px;">${m.id}</code></td>
+            <td style="font-weight:500;">${msTitle(m)}</td>
+            <td style="font-size:11px;">${msBloom(m.bloom)}</td>
+            <td>${'★'.repeat(m.niv)}</td>
+          </tr>`).join('')}</tbody></table>
+        </div>`;
+      }).join('')}
     </div>`;
   }).join('');
 }
@@ -1126,7 +1134,7 @@ async function loadDBFromSupabase() {
     const [l, s, k, lp, f, lk] = await Promise.all([
       sb.from('laender').select('*'),
       sb.from('schulen').select('*'),
-      sb.from('klassen').select('*, klasse_faecher(fach_id, faecher(name))'),
+      sb.from('klassen').select('*, klasse_faecher(fach_id, curriculum_id, faecher(name))'),
       sb.from('profiles').select('id,vorname,nachname,email,rolle,sprache').in('rolle',['lehrperson','schulleitung','laender_admin','super_admin']),
       sb.from('faecher').select('*').order('name'),
       sb.from('lehrperson_klassen').select('lehrperson_id, klasse_id, unterrichtssprache'),
@@ -1143,10 +1151,13 @@ async function loadDBFromSupabase() {
     if(k.data) DB.klassen = k.data.map(x => ({
       id: x.id, schuleId: x.schule_id, name: x.name,
       stufe: x.stufe, schuljahr: x.schuljahr,
-      faecher: (x.klasse_faecher||[]).map(fi=>fi.faecher?.name).filter(Boolean),
+      faecher: (x.klasse_faecher||[]).map(fi=>({
+        name: fi.faecher?.name,
+        fachId: fi.fach_id,
+        curriculumId: fi.curriculum_id||null,
+      })).filter(fi=>fi.name),
       lehrpersonIds: (lk.data||[]).filter(r=>r.klasse_id===x.id).map(r=>r.lehrperson_id),
       lehrpersonSprachen: Object.fromEntries((lk.data||[]).filter(r=>r.klasse_id===x.id).map(r=>[r.lehrperson_id,r.unterrichtssprache])),
-      curriculumId: x.curriculum_id||null,
       schuelerCount: 0
     }));
     if(f && f.data && f.data.length>0) DB.faecher_pool = f.data.map(x=>x.name);
@@ -1165,16 +1176,16 @@ let SB_MS = []; // Milestones from Supabase (replaces hardcoded MS array)
 async function loadCurriculumForTeacher() {
   if(!sb || DEMO) return;
   try {
-    // Curriculum der Klasse des Lehrers laden
+    // Curricula aus klasse_faecher der Klassen des Lehrers laden
     const {data:lkData}=await sb.from('lehrperson_klassen').select('klasse_id').eq('lehrperson_id',CU.id);
     const klassenIds=(lkData||[]).map(x=>x.klasse_id);
-    let curriculumId=null;
+    let curriculumIds=[];
     if(klassenIds.length>0){
-      const {data:klData}=await sb.from('klassen').select('curriculum_id').in('id',klassenIds).not('curriculum_id','is',null).limit(1);
-      curriculumId=klData?.[0]?.curriculum_id||null;
+      const {data:kfData}=await sb.from('klasse_faecher').select('curriculum_id').in('klasse_id',klassenIds).not('curriculum_id','is',null);
+      curriculumIds=[...new Set((kfData||[]).map(x=>x.curriculum_id).filter(Boolean))];
     }
-    const query=sb.from('milestones').select('*, curricula(name, stufe, fach_id, land_id)').order('sort_order');
-    if(curriculumId) query.eq('curriculum_id',curriculumId);
+    let query=sb.from('milestones').select('*, curricula(name, stufe, fach_id, land_id, faecher(name))').order('sort_order');
+    if(curriculumIds.length>0) query=query.in('curriculum_id',curriculumIds);
     const {data, error} = await query;
     if(data && data.length > 0) {
       SB_MS = data.map(m => ({
@@ -1562,7 +1573,7 @@ function renderKlassen(){
           <td><div style="font-weight:500;">${schule?.name||''} ${k.name}</div><div style="font-size:11px;color:var(--gray-m);">${k.schuljahr}</div></td>
           <td>${land?.flag} ${schule?.name||'—'}</td>
           <td><span class="pill pill-teal">${k.stufe}. Klasse</span></td>
-          <td><div style="display:flex;gap:3px;flex-wrap:wrap;">${k.faecher.map(f=>`<span class="pill pill-amber" style="font-size:10px;">${f}</span>`).join('')}</div></td>
+          <td><div style="display:flex;gap:3px;flex-wrap:wrap;">${k.faecher.map(f=>`<span class="pill pill-amber" style="font-size:10px;">${f.name||f}</span>`).join('')}</div></td>
           <td style="font-size:12px;color:var(--gray-m);">${lps.join(', ')}</td>
           <td>${k.schuelerCount}</td>
           <td style="display:flex;gap:6px;">
@@ -1613,22 +1624,28 @@ async function openEditKlasseModal(id){
   const sprachen=['DE','EN','FR','IT','ES','PT'];
   // Curricula laden
   let curricula=[];
-  if(sb){const{data}=await sb.from('curricula').select('id,name,stufe,status');curricula=data||[];}
+  if(sb){const{data}=await sb.from('curricula').select('id,name,stufe,fach_id,faecher(name)').order('stufe');curricula=data||[];}
   openModal(`
     <div class="modal-title">✏️ ${schule?.name} ${k.name}</div>
     <div class="modal-sub">Klasse bearbeiten — ${k.schuljahr}</div>
     <div class="field"><label>Klassenbezeichnung</label><input class="inp" value="${k.name}" id="m-kl-name"></div>
     <div class="field">
-      <label>Curriculum</label>
-      <select class="sel" id="m-kl-curr">
-        <option value="">— Kein Curriculum —</option>
-        ${curricula.map(c=>`<option value="${c.id}" ${k.curriculumId===c.id?'selected':''}>${c.name} (Stufe ${c.stufe})</option>`).join('')}
-      </select>
-    </div>
-    <div class="field">
-      <label>Fächer</label>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;" id="m-fach-chips">
-        ${DB.faecher_pool.map(f=>`<div class="lang-chip ${k.faecher.includes(f)?'on':''}" onclick="this.classList.toggle('on')" style="font-size:12px;">${f}</div>`).join('')}
+      <label>Fächer & Curriculum</label>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;" id="m-fach-list">
+        ${DB.faecher_pool.map(f=>{
+          const existing=k.faecher.find(fi=>fi.name===f);
+          const isOn=!!existing;
+          const currId=existing?.curriculumId||'';
+          const relevantCurr=curricula.filter(c=>c.faecher?.name===f);
+          return`<div style="display:flex;align-items:center;gap:8px;padding:8px;border:1.5px solid var(--border);border-radius:var(--rs);background:#fff;">
+            <input type="checkbox" id="fach-cb-${f}" value="${f}" ${isOn?'checked':''} style="width:15px;height:15px;accent-color:var(--teal);">
+            <label for="fach-cb-${f}" style="width:100px;font-size:13px;cursor:pointer;">${f}</label>
+            <select class="sel" id="fach-curr-${f}" style="flex:1;padding:5px 8px;font-size:12px;">
+              <option value="">— Kein Curriculum —</option>
+              ${relevantCurr.map(c=>`<option value="${c.id}" ${currId===c.id?'selected':''}>${c.name}</option>`).join('')}
+            </select>
+          </div>`;
+        }).join('')}
       </div>
     </div>
     <div class="field">
@@ -1681,15 +1698,28 @@ async function saveNewKlasse(){
 
 async function saveEditKlasse(id){
   const name=document.getElementById('m-kl-name').value;
-  const faecher=[...document.querySelectorAll('#m-fach-chips .lang-chip.on')].map(el=>el.textContent);
-  // Collect checked lehrpersonen with their selected language
+  // Fächer mit Curriculum sammeln
+  const selFaecher=[...document.querySelectorAll('#m-fach-list input[type=checkbox]:checked')].map(cb=>({
+    name:cb.value,
+    curriculumId:document.getElementById('fach-curr-'+cb.value)?.value||null
+  }));
+  // Lehrpersonen sammeln
   const selLps=[...document.querySelectorAll('#m-kl-lp-list input[type=checkbox]:checked')].map(cb=>({
     id:cb.value,
     lang:document.getElementById('lp-lang-'+cb.value)?.value||'DE'
   }));
-  const currId=document.getElementById('m-kl-curr')?.value||null;
   if(sb){
-    await sb.from('klassen').update({name, curriculum_id:currId||null}).eq('id',id);
+    await sb.from('klassen').update({name}).eq('id',id);
+    // klasse_faecher: delete + reinsert mit curriculum_id
+    await sb.from('klasse_faecher').delete().eq('klasse_id',id);
+    for(const f of selFaecher){
+      const{data:fach}=await sb.from('faecher').select('id').eq('name',f.name).single();
+      if(fach) await sb.from('klasse_faecher').insert({
+        klasse_id:id, fach_id:fach.id,
+        curriculum_id:f.curriculumId||null
+      });
+    }
+    // lehrperson_klassen: delete + reinsert
     await sb.from('lehrperson_klassen').delete().eq('klasse_id',id);
     for(const lp of selLps){
       await sb.from('lehrperson_klassen').insert({
