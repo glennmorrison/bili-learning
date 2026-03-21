@@ -960,10 +960,11 @@ async function renderGen(){
           ${klassenOpts.map(x=>`<option value="${x.klasse_id}" ${x.klasse_id===selKid?'selected':''}>${x.klassen?.name} (${x.klassen?.schuljahr})</option>`).join('')}
         </select>
         <div style="font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Für</div>
-        <select class="sel" style="font-size:11px;padding:5px 8px;margin-bottom:10px;" id="g-schueler">
+        <select class="sel" style="font-size:11px;padding:5px 8px;margin-bottom:6px;" id="g-schueler" onchange="gUpdateSchuelerBanner()">
           <option value="">Ganze Klasse</option>
           ${schuelerOpts.map(s=>`<option value="${s.id}" ${s.id===preselSchueler?'selected':''}>${s.vorname} ${s.nachname}</option>`).join('')}
         </select>
+        <div id="g-schueler-banner" style="margin-bottom:10px;"></div>
         <div style="font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Milestones</div>
         <div style="margin-bottom:12px;">
           ${[...new Set(activeMS.map(m=>m.curricula?.name||m.unit))].map((currName,ci)=>{
@@ -1009,14 +1010,121 @@ async function renderGen(){
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--gray-m);text-align:center;gap:8px;">
           <div style="font-size:40px;">📄</div>
           <div style="font-family:var(--serif);font-size:18px;color:var(--gray);">Bereit</div>
+          ${preselSchueler?`<div style="font-size:12px;">Individuelle Förderung für <strong>${preselName}</strong> bereit → wähle ein Curriculum im Banner</div>`:''}
         </div>
       </div>
     </div>`;
 }
+  if(preselSchueler) setTimeout(gUpdateSchuelerBanner,100);
 
 function gtMs(id){GS.selMs.has(id)?GS.selMs.delete(id):GS.selMs.add(id);const e=document.getElementById('gms-'+id);if(e){e.style.borderColor=GS.selMs.has(id)?'var(--purple)':'var(--border)';e.style.background=GS.selMs.has(id)?'var(--purple-l)':'#fff';e.style.color=GS.selMs.has(id)?'var(--purple)':'var(--gray-m)';}}
 function gSL(l){GS.lang=l;['DE','EN','bilingual'].forEach(x=>{const e=document.getElementById('gl-'+x);if(e){e.style.borderColor=x===l?'var(--teal)':'var(--border)';e.style.background=x===l?'var(--teal-l)':'#fff';e.style.color=x===l?'var(--teal)':'var(--gray-m)';}});}
 function gSN(n){GS.niveau=n;[1,2,3,'mix'].forEach(x=>{const e=document.getElementById('gn-'+x);if(e){e.style.borderColor=x===n?'var(--teal)':'var(--border)';e.style.background=x===n?'var(--teal-l)':'#fff';e.style.color=x===n?'var(--teal)':'var(--gray-m)';}});}
+
+
+// ═══════════════════════════════════════════════════════
+// GENERATOR — INDIVIDUELLER FÖRDER-BUTTON
+// ═══════════════════════════════════════════════════════
+async function gUpdateSchuelerBanner(){
+  const sid=document.getElementById('g-schueler')?.value;
+  const banner=document.getElementById('g-schueler-banner');
+  if(!banner) return;
+  if(!sid){banner.innerHTML='';return;}
+
+  // Milestone-Status des Schülers laden
+  const activeMS=getMS();
+  const{data:msData}=await sb.from('schueler_milestones').select('milestone_id,uebungs_status,validiert_status').eq('schueler_id',sid);
+  const msStatus=msData||[];
+
+  // Pro Curriculum gruppieren
+  const curricula=[...new Map(activeMS.map(m=>[m.curricula?.name||'',m.curricula])).values()].filter(c=>c?.name);
+
+  banner.innerHTML=curricula.map(curr=>{
+    const currMs=activeMS.filter(m=>m.curricula?.name===curr.name);
+    const validated=currMs.filter(m=>msStatus.find(s=>s.milestone_id===m.sb_id&&s.validiert_status>=2)).length;
+    const inProgress=currMs.filter(m=>msStatus.find(s=>s.milestone_id===m.sb_id&&s.validiert_status<2&&s.uebungs_status>=1)).length;
+    const shortName=curr.name.replace(' LP21','');
+    return`<div style="background:var(--teal-l);border:1px solid var(--teal);border-radius:var(--rs);padding:8px 10px;margin-bottom:6px;">
+      <div style="font-size:11px;font-weight:600;color:var(--teal);margin-bottom:4px;">${shortName}</div>
+      <div style="font-size:10px;color:var(--gray-m);margin-bottom:6px;">
+        <span style="color:var(--green);">✓ ${validated}</span> validiert ·
+        <span style="color:var(--amber);">▶ ${inProgress}</span> in Arbeit ·
+        <span>— ${currMs.length-validated-inProgress}</span> offen
+      </div>
+      <button class="btn btn-teal" style="width:100%;justify-content:center;font-size:11px;padding:5px;"
+        onclick="gIndividuell('${sid}','${curr.name}')">
+        ✦ Individuelle Förderung · ${shortName}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function gIndividuell(sid, curriculumName){
+  const activeMS=getMS().filter(m=>m.curricula?.name===curriculumName);
+  if(!activeMS.length){alert('Kein Curriculum geladen.');return;}
+
+  const btn=document.getElementById('g-btn');
+  const prev=document.getElementById('g-prev');
+  if(btn){btn.innerHTML='<div class="spinner"></div>';btn.disabled=true;}
+  prev.innerHTML='<div class="loadbar"></div><div style="text-align:center;padding:30px;color:var(--gray-m);">✦ Claude analysiert Lernstand…</div>';
+
+  // Lernstand laden
+  const{data:msData}=await sb.from('schueler_milestones').select('milestone_id,uebungs_status,validiert_status').eq('schueler_id',sid);
+  const msStatus=msData||[];
+  const{data:profile}=await sb.from('profiles').select('vorname,nachname').eq('id',sid).single();
+
+  const validated=activeMS.filter(m=>msStatus.find(s=>s.milestone_id===m.sb_id&&s.validiert_status>=2));
+  const inProgress=activeMS.filter(m=>msStatus.find(s=>s.milestone_id===m.sb_id&&s.validiert_status<2&&s.uebungs_status>=1));
+  const open=activeMS.filter(m=>!msStatus.find(s=>s.milestone_id===m.sb_id));
+
+  // Fokus-Milestones: aktuell in Arbeit + nächster offener
+  const focus=[...inProgress, ...open.slice(0,1)];
+  const review=validated.slice(-1); // letzter validierter zur Festigung
+  const targetMs=[...focus,...review].slice(0,4);
+
+  const anz=parseInt(document.getElementById('g-anz')?.value)||4;
+  const lang=GS.lang;
+  const ctx=document.getElementById('g-ctx')?.value.trim()||'';
+
+  const prompt=`Expert primary school teacher creating an INDIVIDUALIZED learning sheet.
+
+Student: ${profile?.vorname} ${profile?.nachname}
+Curriculum: ${curriculumName}
+
+Learning status:
+- Validated (${validated.length}): ${validated.map(m=>m.id+' '+msTitle(m)).join(', ')||'none yet'}
+- In progress (${inProgress.length}): ${inProgress.map(m=>m.id+' '+msTitle(m)).join(', ')||'none'}
+- Not started: ${open.length} milestones remaining
+
+Target milestones for this sheet (focus on gaps and current level):
+${targetMs.map(m=>m.id+': '+msTitle(m)).join(', ')}
+
+Create ${anz} tasks that:
+1. Practice the "in progress" milestones to consolidate them
+2. Gently review the last validated milestone
+3. Introduce the next open milestone at an easy level
+Language: ${lang==='EN'?'English':lang==='bilingual'?'bilingual DE/EN':'Deutsch'}
+${ctx?'Theme: "'+ctx+'"':'Use age-appropriate, motivating contexts for a primary school student.'}
+
+Respond ONLY JSON: {"tasks":[{"milestone_id":"","context":"","question":"","solution":"","bloom":"","niveau":1}]}`;
+
+  try{
+    const r=await fetch(SB_FN+'/anthropic-proxy',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SB_KEY,'apikey':SB_KEY},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:prompt}]})
+    });
+    const d=await r.json();
+    const raw=d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(raw);
+    // Banner im Aufgabenblatt
+    const schuelerName=`${profile?.vorname} ${profile?.nachname}`;
+    const shortCurr=curriculumName.replace(' LP21','');
+    gRender(parsed.tasks,false,`Individuelle Förderung · ${schuelerName} · ${shortCurr}`);
+  }catch(e){
+    prev.innerHTML='<div class="alert alert-red">Fehler beim Generieren: '+e.message+'</div>';
+  }
+  if(btn){btn.innerHTML='✦ Generieren';btn.disabled=false;}
+}
 
 async function gGen(){
   if(!GS.selMs.size){alert('Mind. einen Milestone wählen.');return;}
@@ -1053,7 +1161,7 @@ function gDemo(){
   ].slice(0,anz),true);
 }
 
-function gRender(tasks,isDemo=false){
+function gRender(tasks,isDemo=false,titel=''){
   const datum=new Date().toLocaleDateString('de-CH',{day:'2-digit',month:'long',year:'numeric'});
   document.getElementById('g-prev').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -1065,7 +1173,7 @@ function gRender(tasks,isDemo=false){
         ${isDemo?`<div style="background:var(--amber-l);border:1px solid #FAC775;border-radius:var(--rs);padding:6px 10px;margin-bottom:10px;font-size:11px;color:var(--amber);">Demo-Aufgaben</div>`:''}
         <div style="display:flex;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:2.5px solid var(--teal-d);">
           <div><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);">Bili Learning</div>
-          <div style="font-family:var(--serif);font-size:17px;">Mathematik · Klasse 5/6</div></div>
+          <div style="font-family:var(--serif);font-size:17px;">${titel||'Aufgabenblatt'}</div></div>
           <div style="text-align:right;"><div style="font-family:var(--serif);font-size:13px;">________________________</div>
           <div style="font-size:10px;color:var(--gray-m);">${datum}</div></div>
         </div>
