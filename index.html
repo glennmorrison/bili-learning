@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bili Learning</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{--teal:#0F6E56;--teal-m:#1D9E75;--teal-l:#E1F5EE;--teal-d:#085041;--purple:#534AB7;--purple-l:#EEEDFE;--coral:#993C1D;--coral-l:#FAECE7;--amber:#854F0B;--amber-l:#FAEEDA;--gray:#2C2C2A;--gray-m:#73726C;--gray-l:#F1EFE8;--gray-ll:#F8F7F2;--green:#3B6D11;--green-l:#EAF3DE;--red:#A32D2D;--red-l:#FCEBEB;--border:#E0DED6;--surface:#fff;--r:12px;--rs:8px;--serif:'DM Serif Display',Georgia,serif;--sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace;}
@@ -675,6 +676,7 @@ async function renderDash(){
 async function renderMatrix(){
   const c=document.getElementById('t-content');
   c.innerHTML='<div class="loadbar"></div>';
+  document.getElementById('t-act').innerHTML=`<button class="btn btn-ghost btn-sm" onclick="exportMatrixExcel()">⬇ Excel Export</button>`;
   await loadCurriculumForTeacher();
   const ms=getMS();
   if(!ms.length){c.innerHTML='<div class="card" style="text-align:center;padding:40px;color:var(--gray-m);">Kein Curriculum für diese Klasse.</div>';return;}
@@ -762,6 +764,82 @@ function openDossier(schuelerID, name){
   window._dossierSchuelerID=schuelerID;
   window._dossierName=name;
   tNav('dossier');
+}
+
+
+// ═══════════════════════════════════════════════════════
+// EXCEL EXPORT
+// ═══════════════════════════════════════════════════════
+async function exportMatrixExcel(){
+  const ms=getMS();
+  if(!ms.length){alert('Kein Curriculum geladen.');return;}
+
+  // Schüler + Status laden
+  const{data:lkData}=await sb.from('lehrperson_klassen').select('klasse_id,klassen(name,schuljahr)').eq('lehrperson_id',CU.id);
+  const alleKlassenIds=[...new Set((lkData||[]).map(x=>x.klasse_id))];
+  const targetKlasseId=window._dashKlasseId&&alleKlassenIds.includes(window._dashKlasseId)?window._dashKlasseId:alleKlassenIds[0];
+  const klasseInfo=lkData?.find(x=>x.klasse_id===targetKlasseId)?.klassen;
+
+  let schueler=[], msStatus=[];
+  if(targetKlasseId){
+    const{data:skData}=await sb.from('schueler_klassen').select('schueler_id').eq('klasse_id',targetKlasseId);
+    const ids=[...new Set((skData||[]).map(x=>x.schueler_id))];
+    if(ids.length){
+      const[{data:sData},{data:msData}]=await Promise.all([
+        sb.from('profiles').select('id,vorname,nachname').in('id',ids),
+        sb.from('schueler_milestones').select('schueler_id,milestone_id,uebungs_status,validiert_status').in('schueler_id',ids)
+      ]);
+      schueler=sData||[];
+      msStatus=msData||[];
+    }
+  }
+
+  const wb=XLSX.utils.book_new();
+  const klassenName=`${klasseInfo?.name||'Klasse'} ${klasseInfo?.schuljahr||''}`.trim();
+
+  // ── TAB 1: Matrix ──────────────────────────────────
+  const matrixHeader=['Schüler/in', ...ms.map(m=>msTitle(m)), 'Fortschritt %'];
+  const matrixRows=schueler.map(s=>{
+    const sStatus=msStatus.filter(x=>x.schueler_id===s.id);
+    const done=sStatus.filter(x=>x.validiert_status>=2).length;
+    const pct=ms.length?Math.round(done/ms.length*100):0;
+    return[
+      `${s.vorname} ${s.nachname}`,
+      ...ms.map(m=>{
+        const st=sStatus.find(x=>x.milestone_id===m.sb_id)||{};
+        if(st.validiert_status>=2) return '✓ Validiert';
+        if(st.uebungs_status>=1) return '▶ In Arbeit';
+        return '—';
+      }),
+      `${pct}%`
+    ];
+  });
+  const ws1=XLSX.utils.aoa_to_sheet([matrixHeader,...matrixRows]);
+  // Spaltenbreiten
+  ws1['!cols']=[{wch:20},...ms.map(()=>({wch:18})),{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws1, 'Klassen-Matrix');
+
+  // ── TAB 2: Fortschritt pro Curriculum ──────────────
+  const curricula=[...new Map(ms.map(m=>[m.curricula?.name||'',m.curricula])).values()].filter(c=>c?.name);
+  const progHeader=['Schüler/in',...curricula.map(c=>c.name.replace(' LP21','')),'Gesamtfortschritt %'];
+  const progRows=schueler.map(s=>{
+    const sStatus=msStatus.filter(x=>x.schueler_id===s.id);
+    const currPcts=curricula.map(curr=>{
+      const currMs=ms.filter(m=>m.curricula?.name===curr.name);
+      const done=currMs.filter(m=>sStatus.find(x=>x.milestone_id===m.sb_id&&x.validiert_status>=2)).length;
+      return currMs.length?`${Math.round(done/currMs.length*100)}%`:'—';
+    });
+    const totalDone=sStatus.filter(x=>x.validiert_status>=2).length;
+    const totalPct=ms.length?Math.round(totalDone/ms.length*100):0;
+    return[`${s.vorname} ${s.nachname}`,...currPcts,`${totalPct}%`];
+  });
+  const ws2=XLSX.utils.aoa_to_sheet([progHeader,...progRows]);
+  ws2['!cols']=[{wch:20},...curricula.map(()=>({wch:22})),{wch:16}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Fortschritt pro Fach');
+
+  // Export
+  const datum=new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `Bili_${klassenName}_${datum}.xlsx`);
 }
 
 // ═══════════════════════════════════════════════════════
