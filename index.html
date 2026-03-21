@@ -531,9 +531,13 @@ async function renderDash(){
       return true;
     });
     // Fächer pro Klasse sammeln
+    // Fächernamen direkt aus DB laden
+    const{data:faecherData}=await sb.from('faecher').select('id,name,is_bilingual');
+    const faecherMap=Object.fromEntries((faecherData||[]).map(f=>[f.id,f]));
     myKlassen=myKlassen.map(lk=>{
       const faecher=lkRaw.filter(x=>x.klassen?.id===lk.klassen?.id).map(x=>({
-        fachId:x.fach_id, lang:x.unterrichtssprache
+        fachId:x.fach_id, lang:x.unterrichtssprache,
+        name:faecherMap[x.fach_id]?.name||''
       }));
       return {...lk, alleFaecher:faecher};
     });
@@ -549,19 +553,40 @@ async function renderDash(){
     }
   }
 
+  // Aktive Klasse (erste oder gewählte)
+  const selKlasseId=window._dashKlasseId||(myKlassen[0]?.klassen?.id||null);
+  const selKlasse=myKlassen.find(lk=>lk.klassen?.id===selKlasseId)||myKlassen[0];
+
   // Compute stats
   const totalMs = msStatus.length;
   const doneMs = msStatus.filter(m=>m.validiert_status>=2).length;
   const avgProgress = totalMs>0 ? Math.round(doneMs/totalMs*100) : 0;
-  const alerts = students.filter(s=>s.aktiv).length; // placeholder until alert logic
   const activeMS = getMS();
-  const unitProgress = [...new Set(activeMS.map(m=>m.unit))].map(u=>{
-    const ms=activeMS.filter(m=>m.unit===u);
-    const done=students.filter(s=>ms.some(m=>msStatus.some(st=>st.schueler_id===s.id&&st.validiert_status>=2))).length;
-    return {u, pct: ms.length>0?Math.round(doneMs/Math.max(totalMs,1)*100):0, label:msUnit(u)};
+  // Fortschritt pro Fach (Curriculum-Gruppe)
+  const curriculaMap={};
+  activeMS.forEach(m=>{
+    const cname=m.curricula?.name||m.curricula?.faecher?.name||'Curriculum';
+    if(!curriculaMap[cname]) curriculaMap[cname]=[];
+    curriculaMap[cname].push(m);
+  });
+  const fachProgress=Object.entries(curriculaMap).map(([name,ms])=>{
+    const total=ms.length*Math.max(students.length,1);
+    const done=ms.reduce((a,m)=>a+msStatus.filter(st=>st.validiert_status>=2&&students.some(s=>s.id===st.schueler_id)).length,0);
+    return{name, pct:total>0?Math.round(done/total*100):0};
   });
 
   c.innerHTML=`
+    ${myKlassen.length>1?`
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+      ${myKlassen.map(lk=>{
+        const k=lk.klassen;
+        const isActive=k?.id===selKlasseId;
+        return`<button class="btn ${isActive?'btn-teal':'btn-ghost'}" style="font-size:12px;"
+          onclick="window._dashKlasseId='${k?.id}';renderDash()">
+          ${k?.schulen?.name} ${k?.name} <span style="opacity:.7;font-size:10px;">${k?.schuljahr}</span>
+        </button>`;
+      }).join('')}
+    </div>`:''}
     <div class="g4" style="margin-bottom:16px;">
       <div class="stat"><div class="stat-val" style="color:var(--teal)">${students.length}</div><div class="stat-label">${t('schuelerinnen')}</div></div>
       <div class="stat"><div class="stat-val" style="color:var(--teal)">${avgProgress}%</div><div class="stat-label">${t('fortschritt')}</div></div>
@@ -571,25 +596,19 @@ async function renderDash(){
     <div class="g2">
       <div>
         <div class="card" style="margin-bottom:12px;">
-          <div class="card-title">Meine Klassen</div>
-          ${myKlassen.length===0
-            ? `<div style="color:var(--gray-m);font-size:13px;padding:8px 0;">Noch keine Klassen zugewiesen.<br><span style="font-size:11px;">Admin → Klassen & Fächer → Lehrperson zuweisen.</span></div>`
-            : myKlassen.map(lk=>{
-                const k=lk.klassen;
-                const faecherPills=(lk.alleFaecher||[]).map(f=>{
-                  const fachName=DB.faecher_list.find(x=>x.id===f.fachId)?.name||'';
-                  return fachName?`<span class="pill pill-amber" style="font-size:10px;">${fachName} ${f.lang}</span>`:'';
-                }).join('');
-                return`<div style="padding:10px 0;border-bottom:0.5px solid var(--border);">
-                  <div style="display:flex;align-items:center;justify-content:space-between;">
-                    <div>
-                      <div style="font-weight:500;font-size:13px;">${k?.schulen?.name||'—'} · Klasse ${k?.name||'—'}</div>
-                      <div style="font-size:11px;color:var(--gray-m);">${k?.schuljahr||''} · Stufe ${k?.stufe||'—'}</div>
-                    </div>
-                  </div>
-                  ${faecherPills?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;">${faecherPills}</div>`:''}
-                </div>`;
-              }).join('')}
+          ${selKlasse?`
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div>
+              <div style="font-family:var(--serif);font-size:16px;">${selKlasse.klassen?.schulen?.name} · Klasse ${selKlasse.klassen?.name}</div>
+              <div style="font-size:11px;color:var(--gray-m);">${selKlasse.klassen?.schuljahr} · Stufe ${selKlasse.klassen?.stufe}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            ${(selKlasse.alleFaecher||[]).map(f=>
+              f.name?`<span class="pill pill-amber" style="font-size:10px;">${f.name} <span style="opacity:.7">${f.lang}</span></span>`:''
+            ).join('')}
+          </div>`
+          :`<div style="color:var(--gray-m);font-size:13px;">Noch keine Klassen zugewiesen.</div>`}
         </div>
         <div class="card">
           <div class="card-title">Schnellaktionen</div>
@@ -604,12 +623,12 @@ async function renderDash(){
       <div>
         <div class="card" style="margin-bottom:12px;">
           <div class="card-title">Klassen-Fortschritt</div>
-          ${activeMS.length===0
+          ${fachProgress.length===0
             ? `<div style="color:var(--gray-m);font-size:12px;padding:8px 0;">Kein Curriculum geladen.</div>`
-            : unitProgress.map(({u,pct,label})=>`
+            : fachProgress.map(({name,pct})=>`
               <div style="margin-bottom:10px;">
                 <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
-                  <span>${label}</span>
+                  <span>${name}</span>
                   <span style="color:var(--gray-m);">${pct}%</span>
                 </div>
                 <div style="height:6px;border-radius:3px;background:var(--gray-l);overflow:hidden;">
