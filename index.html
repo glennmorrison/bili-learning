@@ -226,6 +226,13 @@ body{font-family:var(--sans);background:var(--gray-ll);color:var(--gray);font-si
 .tab:hover{color:var(--gray);}
 .tab.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:500;}
 
+
+@media print {
+  body * { visibility: hidden !important; }
+  #g-prev, #g-prev * { visibility: visible !important; }
+  #g-prev { position: fixed; left: 0; top: 0; width: 100%; padding: 20px; }
+  .no-print { display: none !important; }
+}
 </style>
 </head>
 <body>
@@ -1017,6 +1024,22 @@ async function renderGen(){
   if(preselSchueler) setTimeout(gUpdateSchuelerBanner,100);
 }
 
+
+function gExportPDF(){
+  // Lösungen kurz einblenden für PDF falls gewünscht
+  const solDiv=document.querySelector('#g-prev .sol-section');
+  const wasClosed=solDiv&&solDiv.style.display==='none';
+  if(wasClosed) solDiv.style.display='flex';
+  window.print();
+  if(wasClosed) solDiv.style.display='none';
+}
+
+function gToggleSolutions(){
+  const solDiv=document.querySelector('#g-prev .sol-section');
+  if(!solDiv) return;
+  solDiv.style.display=solDiv.style.display==='none'?'flex':'none';
+}
+
 function gtMs(id){GS.selMs.has(id)?GS.selMs.delete(id):GS.selMs.add(id);const e=document.getElementById('gms-'+id);if(e){e.style.borderColor=GS.selMs.has(id)?'var(--purple)':'var(--border)';e.style.background=GS.selMs.has(id)?'var(--purple-l)':'#fff';e.style.color=GS.selMs.has(id)?'var(--purple)':'var(--gray-m)';}}
 function gSL(l){GS.lang=l;['DE','EN','bilingual'].forEach(x=>{const e=document.getElementById('gl-'+x);if(e){e.style.borderColor=x===l?'var(--teal)':'var(--border)';e.style.background=x===l?'var(--teal-l)':'#fff';e.style.color=x===l?'var(--teal)':'var(--gray-m)';}});}
 function gSN(n){GS.niveau=n;[1,2,3,'mix'].forEach(x=>{const e=document.getElementById('gn-'+x);if(e){e.style.borderColor=x===n?'var(--teal)':'var(--border)';e.style.background=x===n?'var(--teal-l)':'#fff';e.style.color=x===n?'var(--teal)':'var(--gray-m)';}});}
@@ -1166,7 +1189,11 @@ function gRender(tasks,isDemo=false,titel=''){
   document.getElementById('g-prev').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <div style="font-family:var(--serif);font-size:16px;">${tasks.length} Aufgaben · ${datum}</div>
-      <button class="btn btn-teal btn-sm" onclick="window.print()">🖨 Drucken</button>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-ghost btn-sm no-print" onclick="gToggleSolutions()">👁 Lösungen</button>
+        <button class="btn btn-ghost btn-sm no-print" onclick="window.print()">🖨 Drucken</button>
+        <button class="btn btn-teal btn-sm no-print" onclick="gExportPDF()">⬇ PDF</button>
+      </div>
     </div>
     <div style="background:#fff;border-radius:var(--r);box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;">
       <div style="padding:22px 26px;">
@@ -1188,8 +1215,8 @@ function gRender(tasks,isDemo=false,titel=''){
             <div style="border:1px dashed var(--border);border-radius:5px;height:44px;background:var(--gray-ll);margin-top:6px;"></div>
           </div>`).join('')}
         <div style="margin-top:8px;">
-          <button class="btn btn-ghost btn-sm" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'flex':'none'">👁 Lösungen</button>
-          <div style="display:none;gap:8px;font-size:11px;align-items:center;flex-wrap:wrap;margin-top:4px;">${tasks.map((t,i)=>`<span><strong>${i+1}.</strong> ${t.solution}</span>`).join('')}</div>
+          <button class="btn btn-ghost btn-sm no-print" onclick="gToggleSolutions()">👁 Lösungen</button>
+          <div class="sol-section" style="display:none;gap:8px;font-size:11px;align-items:center;flex-wrap:wrap;margin-top:4px;">${tasks.map((t,i)=>`<span><strong>${i+1}.</strong> ${t.solution}</span>`).join('')}</div>
         </div>
       </div>
     </div>`;
