@@ -139,7 +139,6 @@ body{font-family:var(--sans);background:var(--gray-ll);color:var(--gray);font-si
 .tab.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:500;}
 </style>
 <script>
-document.addEventListener("DOMContentLoaded", function() {
 
 // ═══════════════════════════════════════════════════════
 // SUPABASE
@@ -278,7 +277,7 @@ function renderOverview(){
             <td>${s.klassen}</td>
             <td>${s.students.toLocaleString()}</td>
             <td><span class="pill pill-green">Aktiv</span></td>
-            <td><button class="btn btn-ghost btn-sm" onclick="showView('klassen')">Klassen →</button></td>
+            <td><button class="btn btn-ghost btn-sm" data-view="klassen">Klassen →</button></td>
           </tr>`;}).join('')}
         </tbody>
       </table>
@@ -303,7 +302,7 @@ function renderOrgTree(){
             <div class="tree-item">
               <span class="tree-icon">🏫</span>
               <div style="flex:1;"><div class="tree-label">${s.name}</div><div class="tree-meta">${s.city} · ${s.klassen} Klassen · ${s.students} SuS</div></div>
-              <div class="tree-actions"><button class="btn btn-ghost btn-sm" onclick="showView('klassen')">→</button></div>
+              <div class="tree-actions"><button class="btn btn-ghost btn-sm" data-view="klassen">→</button></div>
             </div>
           </div>`).join('')}
       </div>`).join('')}
@@ -466,7 +465,7 @@ function renderSchulen(){
           <td>${s.students.toLocaleString()}</td>
           <td style="display:flex;gap:6px;">
             <button class="btn btn-ghost btn-sm" onclick="openEditSchuleModal('${s.id}')">Bearbeiten</button>
-            <button class="btn btn-ghost btn-sm" onclick="showView('klassen')">Klassen</button>
+            <button class="btn btn-ghost btn-sm" data-view="klassen">Klassen</button>
           </td>
         </tr>`;}).join('')}
       </tbody>
@@ -1270,7 +1269,7 @@ function closeModal(){document.getElementById('modal-bg').classList.remove('open
 // ═══════════════════════════════════════════════════════
 showView('overview');
 
-});
+showView("overview");
 </script>
 </head>
 <body>
@@ -1292,20 +1291,20 @@ showView('overview');
   <!-- Sidebar -->
   <div class="sidebar">
     <div class="nav-sec">Organisation</div>
-    <div class="nav-item active" id="nav-overview" onclick="showView('overview')"><span class="ic">🏛</span>Übersicht</div>
-    <div class="nav-item" id="nav-laender" onclick="showView('laender')"><span class="ic">🌍</span>Länder</div>
-    <div class="nav-item" id="nav-schulen" onclick="showView('schulen')"><span class="ic">🏫</span>Schulen</div>
-    <div class="nav-item" id="nav-klassen" onclick="showView('klassen')"><span class="ic">📚</span>Klassen & Fächer</div>
+    <div class="nav-item active" id="nav-overview" data-view="overview"><span class="ic">🏛</span>Übersicht</div>
+    <div class="nav-item" id="nav-laender" data-view="laender"><span class="ic">🌍</span>Länder</div>
+    <div class="nav-item" id="nav-schulen" data-view="schulen"><span class="ic">🏫</span>Schulen</div>
+    <div class="nav-item" id="nav-klassen" data-view="klassen"><span class="ic">📚</span>Klassen & Fächer</div>
 
     <div class="nav-sec">Personen</div>
-    <div class="nav-item" id="nav-schueler" onclick="showView('schueler')"><span class="ic">👥</span>Schüler-Dossiers</div>
-    <div class="nav-item" id="nav-lehrpersonen" onclick="showView('lehrpersonen')"><span class="ic">👩‍🏫</span>Lehrpersonen</div>
-    <div class="nav-item" id="nav-admins" onclick="showView('admins')"><span class="ic">🔑</span>Admins & Rollen</div>
+    <div class="nav-item" id="nav-schueler" data-view="schueler"><span class="ic">👥</span>Schüler-Dossiers</div>
+    <div class="nav-item" id="nav-lehrpersonen" data-view="lehrpersonen"><span class="ic">👩‍🏫</span>Lehrpersonen</div>
+    <div class="nav-item" id="nav-admins" data-view="admins"><span class="ic">🔑</span>Admins & Rollen</div>
 
     <div class="nav-sec">System</div>
-    <div class="nav-item" id="nav-curriculum" onclick="showView('curriculum')"><span class="ic">📋</span>Curricula</div>
-    <div class="nav-item" id="nav-schema" onclick="showView('schema')"><span class="ic">🗄</span>SQL-Schema</div>
-    <div class="nav-item" id="nav-datenschutz" onclick="showView('datenschutz')"><span class="ic">🔒</span>Datenschutz</div>
+    <div class="nav-item" id="nav-curriculum" data-view="curriculum"><span class="ic">📋</span>Curricula</div>
+    <div class="nav-item" id="nav-schema" data-view="schema"><span class="ic">🗄</span>SQL-Schema</div>
+    <div class="nav-item" id="nav-datenschutz" data-view="datenschutz"><span class="ic">🔒</span>Datenschutz</div>
   </div>
 
   <!-- Main -->
@@ -1327,5 +1326,12 @@ showView('overview');
 </div>
 
 
+
+<script>
+document.addEventListener('click', function(e) {
+  var el = e.target.closest('[data-view]');
+  if(el && typeof showView === 'function') showView(el.getAttribute('data-view'));
+});
+</script>
 </body>
 </html>
