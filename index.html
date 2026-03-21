@@ -981,49 +981,50 @@ async function renderSFort(){
 // ═══════════════════════════════════════════════════════
 // DATA MODEL (simulated — replaces Supabase in demo)
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// DB — Live data from Supabase (loaded on demand)
+// ═══════════════════════════════════════════════════════
 const DB = {
-  organisation: {
-    id:'org_sis', name:'SIS Swiss International School',
-    website:'www.sis-education.com', founded:1999,
-    contact:'info@sis-education.com'
-  },
-  laender: [
-    {id:'ch', name:'Schweiz', iso:'CH', flag:'🇨🇭',
-     sprachen:['DE','EN','FR'], lehrplan:'LP21',
-     notensystem:'1-6', timezone:'Europe/Zurich',
-     schulen:['sch_bs','sch_zh','sch_be']},
-    {id:'de', name:'Deutschland', iso:'DE', flag:'🇩🇪',
-     sprachen:['DE','EN'], lehrplan:'KMK',
-     notensystem:'1-6', timezone:'Europe/Berlin',
-     schulen:['sch_mu','sch_ha']},
-    {id:'at', name:'Österreich', iso:'AT', flag:'🇦🇹',
-     sprachen:['DE','EN'], lehrplan:'AHS',
-     notensystem:'1-5', timezone:'Europe/Vienna',
-     schulen:['sch_wi']},
-    {id:'uk', name:'United Kingdom', iso:'GB', flag:'🇬🇧',
-     sprachen:['EN'], lehrplan:'UK National Curriculum',
-     notensystem:'A-F', timezone:'Europe/London',
-     schulen:['sch_lo']},
-  ],
-  schulen: [
-    {id:'sch_bs',landId:'ch',name:'SIS Basel',city:'Basel',students:320,klassen:14},
-    {id:'sch_zh',landId:'ch',name:'SIS Zürich',city:'Zürich',students:410,klassen:18},
-    {id:'sch_be',landId:'ch',name:'SIS Bern',city:'Bern',students:280,klassen:12},
-    {id:'sch_mu',landId:'de',name:'SIS München',city:'München',students:350,klassen:15},
-    {id:'sch_ha',landId:'de',name:'SIS Hamburg',city:'Hamburg',students:290,klassen:12},
-    {id:'sch_wi',landId:'at',name:'SIS Wien',city:'Wien',students:260,klassen:11},
-    {id:'sch_lo',landId:'uk',name:'SIS London',city:'London',students:380,klassen:16},
-  ],
-  klassen: [
-    {id:'kl_zh_5b',schuleId:'sch_zh',name:'5b',stufe:5,schuljahr:'2025/26',faecher:['Mathematik','Deutsch','Englisch'],lehrpersonIds:['lp_01','lp_02'],schuelerCount:22},
-    {id:'kl_zh_5a',schuleId:'sch_zh',name:'5a',stufe:5,schuljahr:'2025/26',faecher:['Mathematik','Deutsch','Englisch'],lehrpersonIds:['lp_01'],schuelerCount:24},
-    {id:'kl_zh_6a',schuleId:'sch_zh',name:'6a',stufe:6,schuljahr:'2025/26',faecher:['Mathematik','Deutsch','Englisch','Französisch'],lehrpersonIds:['lp_03'],schuelerCount:21},
-    {id:'kl_bs_5a',schuleId:'sch_bs',name:'5a',stufe:5,schuljahr:'2025/26',faecher:['Mathematik','Deutsch','Englisch'],lehrpersonIds:['lp_04'],schuelerCount:20},
-  ],
+  organisation: { name:'Bili Learning', website:'learnbili.com' },
+  laender: [],
+  schulen: [],
+  klassen: [],
   lehrpersonen: [],
   faecher_pool: ['Mathematik','Deutsch','Englisch','Französisch','Naturwissenschaften','Geschichte','Geografie','Musik','Sport','Kunst','Informatik'],
   rollen: ['super_admin','laender_admin','schulleitung','lehrperson','schueler','eltern'],
 };
+
+// Load data from Supabase into DB cache
+async function loadDBFromSupabase() {
+  if(!sb) return;
+  try {
+    const [l, s, k] = await Promise.all([
+      sb.from('laender').select('*'),
+      sb.from('schulen').select('*'),
+      sb.from('klassen').select('*, klasse_faecher(fach_id, faecher(name))'),
+    ]);
+    if(l.data) DB.laender = l.data.map(x => ({
+      id: x.id, name: x.name, iso: x.iso_code, flag: isoToFlag(x.iso_code),
+      sprachen: x.sprachen || [], lehrplan: x.lehrplan,
+      notensystem: x.notensystem, timezone: x.timezone, schulen: []
+    }));
+    if(s.data) DB.schulen = s.data.map(x => ({
+      id: x.id, landId: x.land_id, name: x.name, city: x.city,
+      students: 0, klassen: 0
+    }));
+    if(k.data) DB.klassen = k.data.map(x => ({
+      id: x.id, schuleId: x.schule_id, name: x.name,
+      stufe: x.stufe, schuljahr: x.schuljahr,
+      faecher: (x.klasse_faecher||[]).map(f=>f.faecher?.name).filter(Boolean),
+      lehrpersonIds: [], schuelerCount: 0
+    }));
+  } catch(e) { console.warn('DB load error:', e); }
+}
+
+function isoToFlag(iso) {
+  const flags = {CH:'🇨🇭',DE:'🇩🇪',AT:'🇦🇹',GB:'🇬🇧',FR:'🇫🇷',IT:'🇮🇹',US:'🇺🇸',ES:'🇪🇸'};
+  return flags[iso] || '🏳️';
+}
 
 const LANG_LABELS = {DE:'Deutsch',EN:'English',FR:'Français',IT:'Italiano'};
 const ALL_LANGS = ['DE','EN','FR','IT','ES','ZH'];
@@ -1258,16 +1259,22 @@ function saveLand(landId){
   closeModal();renderLaender();
 }
 
-function saveNewLand(){
+async function saveNewLand(){
   const name=document.getElementById('m-land-name').value;
   const iso=document.getElementById('m-land-iso').value.toUpperCase();
   const sprachen=[...document.querySelectorAll('#m-lang-chips .lang-chip.on')].map(el=>el.dataset.lang);
   if(!name||!iso||!sprachen.length){alert('Bitte Name, ISO-Code und mind. 1 Sprache angeben.');return;}
-  const flags={CH:'🇨🇭',DE:'🇩🇪',AT:'🇦🇹',FR:'🇫🇷',GB:'🇬🇧',US:'🇺🇸',IT:'🇮🇹',ES:'🇪🇸'};
-  DB.laender.push({id:'land_'+iso.toLowerCase(),name,iso,flag:flags[iso]||'🏳️',sprachen,
-    lehrplan:document.getElementById('m-land-lehrplan').value,
-    notensystem:document.getElementById('m-land-noten').value,
-    timezone:document.getElementById('m-land-tz').value,schulen:[]});
+  const lehrplan=document.getElementById('m-land-lehrplan').value;
+  const notensystem=document.getElementById('m-land-noten').value;
+  const timezone=document.getElementById('m-land-tz').value;
+  if(sb){
+    const{data,error}=await sb.from('laender').insert({
+      name,iso_code:iso,sprachen,lehrplan,notensystem,timezone,
+      organisation_id:null
+    }).select().single();
+    if(error){alert('Fehler: '+error.message);return;}
+  }
+  await loadDBFromSupabase();
   closeModal();renderLaender();
 }
 
@@ -1336,12 +1343,16 @@ function openEditSchuleModal(id){
     </div>`);
 }
 
-function saveNewSchule(){
+async function saveNewSchule(){
   const name=document.getElementById('m-sch-name').value;
   const city=document.getElementById('m-sch-city').value;
   const landId=document.getElementById('m-sch-land').value;
   if(!name||!city){alert('Name und Stadt sind Pflichtfelder.');return;}
-  DB.schulen.push({id:'sch_'+name.toLowerCase().replace(/\s/g,'_').slice(0,8),landId,name,city,students:0,klassen:0});
+  if(sb){
+    const{error}=await sb.from('schulen').insert({name,city,land_id:landId,active:true});
+    if(error){alert('Fehler: '+error.message);return;}
+  }
+  await loadDBFromSupabase();
   closeModal();renderSchulen();
 }
 function updateSchule(id){
@@ -1437,15 +1448,29 @@ function openEditKlasseModal(id){
     </div>`);
 }
 
-function saveNewKlasse(){
+async function saveNewKlasse(){
   const name=document.getElementById('m-kl-name').value;
   const schuleId=document.getElementById('m-kl-schule').value;
   const stufe=parseInt(document.getElementById('m-kl-stufe').value);
   const sj=document.getElementById('m-kl-sj').value;
   const faecher=[...document.querySelectorAll('#m-fach-chips .lang-chip.on')].map(el=>el.textContent);
   if(!name||!faecher.length){alert('Name und mind. 1 Fach erforderlich.');return;}
-  DB.klassen.push({id:'kl_'+schuleId.slice(-4)+'_'+name.toLowerCase(),schuleId,name,stufe,schuljahr:sj,faecher,lehrpersonIds:[],schuelerCount:0});
-  const schule=DB.schulen.find(s=>s.id===schuleId);if(schule)schule.klassen++;
+  if(sb){
+    const{data,error}=await sb.from('klassen').insert({
+      name,schule_id:schuleId,stufe,schuljahr:sj,aktiv:true
+    }).select().single();
+    if(error){alert('Fehler: '+error.message);return;}
+    // Insert faecher
+    for(const fachName of faecher){
+      let{data:fach}=await sb.from('faecher').select('id').eq('name',fachName).single();
+      if(!fach){
+        const{data:newFach}=await sb.from('faecher').insert({name:fachName}).select().single();
+        fach=newFach;
+      }
+      if(fach) await sb.from('klasse_faecher').insert({klasse_id:data.id,fach_id:fach.id});
+    }
+  }
+  await loadDBFromSupabase();
   closeModal();renderKlassen();
 }
 
@@ -2099,7 +2124,7 @@ showView("overview");
 
 // Switch between admin and app
 let adminNavReady = false;
-function switchToAdmin() {
+async function switchToAdmin() {
   document.getElementById('app').style.display = 'none';
   document.getElementById('admin-screen').style.display = 'flex';
   document.getElementById('admin-screen').style.flexDirection = 'column';
@@ -2111,6 +2136,7 @@ function switchToAdmin() {
     });
     adminNavReady = true;
   }
+  await loadDBFromSupabase();
   showView('overview');
 }
 function switchToApp() {
