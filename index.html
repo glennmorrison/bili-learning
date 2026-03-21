@@ -1230,15 +1230,18 @@ let SB_MS = []; // Milestones from Supabase (replaces hardcoded MS array)
 async function loadCurriculumForTeacher() {
   if(!sb || DEMO) return;
   try {
-    // Curricula aus klasse_faecher der gewählten Klasse laden
-    const {data:lkData}=await sb.from('lehrperson_klassen').select('klasse_id').eq('lehrperson_id',CU.id);
-    const alleKlassenIds=(lkData||[]).map(x=>x.klasse_id);
-    // Gewählte Klasse bevorzugen, sonst alle
+    // Nur Fächer des Lehrers in der gewählten Klasse laden
+    const {data:lkData}=await sb.from('lehrperson_klassen').select('klasse_id, fach_id').eq('lehrperson_id',CU.id);
+    const alleKlassenIds=[...new Set((lkData||[]).map(x=>x.klasse_id))];
+    // Gewählte Klasse bevorzugen
     const targetKlasseId=window._dashKlasseId&&alleKlassenIds.includes(window._dashKlasseId)
-      ?[window._dashKlasseId]:alleKlassenIds;
+      ?window._dashKlasseId:alleKlassenIds[0];
+    // Fach-IDs des Lehrers in dieser Klasse
+    const myFachIds=(lkData||[]).filter(x=>x.klasse_id===targetKlasseId).map(x=>x.fach_id).filter(Boolean);
     let curriculumIds=[];
-    if(targetKlasseId.length>0){
-      const {data:kfData}=await sb.from('klasse_faecher').select('curriculum_id').in('klasse_id',targetKlasseId).not('curriculum_id','is',null);
+    if(targetKlasseId&&myFachIds.length>0){
+      const {data:kfData}=await sb.from('klasse_faecher').select('curriculum_id')
+        .eq('klasse_id',targetKlasseId).in('fach_id',myFachIds).not('curriculum_id','is',null);
       curriculumIds=[...new Set((kfData||[]).map(x=>x.curriculum_id).filter(Boolean))];
     }
     let query=sb.from('milestones').select('*, curricula(name, stufe, fach_id, land_id, faecher(name))').order('sort_order');
