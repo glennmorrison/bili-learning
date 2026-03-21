@@ -965,7 +965,35 @@ async function renderGen(){
           ${schuelerOpts.map(s=>`<option value="${s.id}" ${s.id===preselSchueler?'selected':''}>${s.vorname} ${s.nachname}</option>`).join('')}
         </select>
         <div style="font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Milestones</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">${activeMS.map(m=>`<div style="padding:3px 8px;border-radius:20px;font-size:10px;font-weight:500;cursor:pointer;border:1.5px solid ${GS.selMs.has(m.id)?'var(--purple)':'var(--border)'};background:${GS.selMs.has(m.id)?'var(--purple-l)':'#fff'};color:${GS.selMs.has(m.id)?'var(--purple)':'var(--gray-m)'};" id="gms-${m.id}" onclick="gtMs('${m.id}')">${m.id}</div>`).join('')}</div>
+        <div style="margin-bottom:12px;">
+          ${[...new Set(activeMS.map(m=>m.curricula?.name||m.unit))].map((currName,ci)=>{
+            const currMs=activeMS.filter(m=>(m.curricula?.name||m.unit)===currName);
+            const units=[...new Set(currMs.map(m=>m.unit))];
+            const shortName=currName.replace(' LP21','');
+            return`<div style="margin-bottom:6px;border:1.5px solid var(--border);border-radius:var(--rs);overflow:hidden;">
+              <div style="padding:7px 10px;background:var(--teal-l);cursor:pointer;display:flex;justify-content:space-between;align-items:center;"
+                onclick="const b=document.getElementById('acc-${ci}');b.style.display=b.style.display==='none'?'block':'none';this.querySelector('.acc-arr').textContent=b.style.display==='none'?'▶':'▼'">
+                <span style="font-size:11px;font-weight:600;color:var(--teal);">${shortName}</span>
+                <span class="acc-arr" style="font-size:9px;color:var(--teal);">▼</span>
+              </div>
+              <div id="acc-${ci}">
+                ${units.map(u=>{
+                  const uMs=currMs.filter(m=>m.unit===u);
+                  return`<div style="padding:6px 10px;border-top:1px solid var(--border);">
+                    <div style="font-size:9px;font-weight:600;color:var(--gray-m);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">${msUnit(u)}</div>
+                    <div style="display:flex;flex-direction:column;gap:2px;">
+                      ${uMs.map(m=>`<div style="display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:5px;cursor:pointer;border:1.5px solid ${GS.selMs.has(m.id)?'var(--purple)':'transparent'};background:${GS.selMs.has(m.id)?'var(--purple-l)':'#fff'};"
+                        id="gms-${m.id}" onclick="gtMs('${m.id}')">
+                        <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:${GS.selMs.has(m.id)?'var(--purple)':'var(--border)'}"></div>
+                        <span style="font-size:11px;color:${GS.selMs.has(m.id)?'var(--purple)':'var(--gray)'};font-weight:${GS.selMs.has(m.id)?'500':'400'};">${msTitle(m)}</span>
+                      </div>`).join('')}
+                    </div>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
         <div style="font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Sprache</div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:12px;">${['DE','EN','bilingual'].map(l=>`<button style="padding:5px;border:1.5px solid ${GS.lang===l?'var(--teal)':'var(--border)'};border-radius:5px;font-size:10px;cursor:pointer;background:${GS.lang===l?'var(--teal-l)':'#fff'};color:${GS.lang===l?'var(--teal)':'var(--gray-m)'};" id="gl-${l}" onclick="gSL('${l}')">${l}</button>`).join('')}</div>
         <div style="font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Niveau</div>
