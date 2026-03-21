@@ -2102,11 +2102,19 @@ showView("overview");
 
 
 // Switch between admin and app
+let adminNavReady = false;
 function switchToAdmin() {
   document.getElementById('app').style.display = 'none';
   document.getElementById('admin-screen').style.display = 'flex';
   document.getElementById('admin-screen').style.flexDirection = 'column';
   document.getElementById('admin-user-name').textContent = CU?.vorname + ' ' + CU?.nachname;
+  if(!adminNavReady) {
+    document.addEventListener('click', function(e) {
+      var el = e.target.closest('[data-view]');
+      if(el && typeof showView === 'function') showView(el.getAttribute('data-view'));
+    });
+    adminNavReady = true;
+  }
   showView('overview');
 }
 function switchToApp() {
@@ -2125,13 +2133,6 @@ async function boot(){
 }
 
 boot();
-</script>
-
-<script data-cfasync="false">
-document.addEventListener('click', function(e) {
-  var el = e.target.closest('[data-view]');
-  if(el && typeof showView === 'function') showView(el.getAttribute('data-view'));
-});
 </script>
 </body>
 </html>
