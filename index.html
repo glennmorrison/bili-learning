@@ -611,7 +611,19 @@ async function renderSchueler(){
   c.innerHTML='<div class="loadbar"></div>';
   document.getElementById('t-act').innerHTML=`<button class="btn btn-teal btn-sm" onclick="tNav('setup')">+ Schüler anlegen</button>`;
   let students=[];
-  if(!DEMO&&sb){const{data}=await sb.from('profiles').select('*').eq('rolle','schueler');students=data||[];}
+  if(!DEMO&&sb){
+    // Nur Schüler aus den Klassen des eingeloggten Lehrers laden
+    const{data:lkData}=await sb.from('lehrperson_klassen').select('klasse_id').eq('lehrperson_id',CU.id);
+    const klassenIds=(lkData||[]).map(x=>x.klasse_id);
+    if(klassenIds.length>0){
+      const{data:skData}=await sb.from('schueler_klassen').select('schueler_id').in('klasse_id',klassenIds);
+      const schuelerIds=[...new Set((skData||[]).map(x=>x.schueler_id))];
+      if(schuelerIds.length>0){
+        const{data}=await sb.from('profiles').select('*').in('id',schuelerIds);
+        students=data||[];
+      }
+    }
+  }
   c.innerHTML=students.length===0
     ?`<div class="card" style="text-align:center;padding:40px;color:var(--gray-m);">
         <div style="font-size:36px;margin-bottom:10px;">👥</div>
