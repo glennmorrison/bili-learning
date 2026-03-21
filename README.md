@@ -71,6 +71,10 @@ Lösung: Admin-Version heisst renderAdminSchueler().
 ### RLS blockiert INSERT auf laender/schulen/klassen
 Lösung: RLS Policies für Admin-Rollen erstellt.
 
+### Jahreswechsel Revert löscht Klassen nicht
+Ursache: RLS Policy für DELETE auf klassen fehlte.
+Lösung: CREATE POLICY klassen_delete ON klassen FOR DELETE USING (rolle IN ('super_admin','laender_admin','schulleitung'));
+
 ### schueler_klassen Insert schlug fehl
 Ursache: Edge Function create-user gab user_id nicht zurück (Response: {success:true, user: authData.user}).
 Lösung: Frontend liest jetzt d.user?.id || d.user_id.
@@ -296,6 +300,8 @@ renderAdminSchueler()   // async, lädt live aus Supabase
 - Test-Schüler löschen: xx yy + test.debug999
 
 ### Erledigt heute
+- Jahreswechsel-Assistent mit Revert ✓
+- RLS DELETE Policy auf klassen ✓
 - Bug #1: schueler_klassen Insert (d.user?.id Fix) ✓
 - Bug #2: renderAdminSchueler auto-load (showView async) ✓
 - Bug #3: saveEditKlasse mit unterrichtssprache ✓
