@@ -231,7 +231,8 @@ body{font-family:var(--sans);background:var(--gray-ll);color:var(--gray);font-si
   body * { visibility: hidden !important; }
   #g-prev, #g-prev * { visibility: visible !important; }
   #g-prev { position: fixed; left: 0; top: 0; width: 100%; padding: 20px; }
-  .no-print { display: none !important; }
+  .no-print { display: none !important; visibility: hidden !important; }
+  .sol-section[style*="display: none"], .sol-section[style*="display:none"] { display: none !important; visibility: hidden !important; }
 }
 </style>
 </head>
@@ -1026,12 +1027,8 @@ async function renderGen(){
 
 
 function gExportPDF(){
-  // Lösungen kurz einblenden für PDF falls gewünscht
-  const solDiv=document.querySelector('#g-prev .sol-section');
-  const wasClosed=solDiv&&solDiv.style.display==='none';
-  if(wasClosed) solDiv.style.display='flex';
+  // PDF zeigt Lösungen nur wenn sie gerade eingeblendet sind
   window.print();
-  if(wasClosed) solDiv.style.display='none';
 }
 
 function gToggleSolutions(){
