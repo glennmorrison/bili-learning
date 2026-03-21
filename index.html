@@ -2755,18 +2755,19 @@ Nur möglich wenn noch keine neuen Lernfortschritte erfasst wurden.`)) return;
     }
   }
 
-  // Neue Klassen + schueler_klassen löschen
-  for(const kid of newKlassenIds){
-    await sb.from('schueler_klassen').delete().eq('klasse_id',kid);
-    await sb.from('lehrperson_klassen').delete().eq('klasse_id',kid);
-    await sb.from('klasse_faecher').delete().eq('klasse_id',kid);
-    await sb.from('klassen').delete().eq('id',kid);
+  // Alle Klassen des neuen Schuljahrs löschen (aktiv + inaktiv)
+  const{data:alleNeueKlassen}=await sb.from('klassen').select('id').eq('schuljahr',newSJ);
+  for(const k of alleNeueKlassen||[]){
+    await sb.from('schueler_klassen').delete().eq('klasse_id',k.id);
+    await sb.from('lehrperson_klassen').delete().eq('klasse_id',k.id);
+    await sb.from('klasse_faecher').delete().eq('klasse_id',k.id);
+    await sb.from('klassen').delete().eq('id',k.id);
   }
 
   // Alte Klassen reaktivieren
   await sb.from('klassen').update({aktiv:true}).eq('schuljahr',oldSJ);
 
-  alert(`✓ Zurückgestellt. Klassen ${oldSJ} sind wieder aktiv.`);
+  alert(`✓ Zurückgestellt. Alle Klassen ${newSJ} gelöscht, Klassen ${oldSJ} wieder aktiv.`);
   await loadDBFromSupabase();
   renderJahreswechsel();
 }
