@@ -510,38 +510,100 @@ function tNav(v){
 async function renderDash(){
   const c=document.getElementById('t-content');
   c.innerHTML='<div class="loadbar"></div>';
-  let students=[];
-  if(!DEMO&&sb){const{data}=await sb.from('profiles').select('*').eq('rolle','schueler');students=data||[];}
+
+  // Load all data in parallel
+  let students=[], klassen=[], msStatus=[], myKlassen=[];
+  if(!DEMO&&sb){
+    const [sRes, kRes, lkRes, msRes] = await Promise.all([
+      sb.from('profiles').select('*').eq('rolle','schueler'),
+      sb.from('klassen').select('*, schulen(name, city), klasse_faecher(faecher(name))'),
+      sb.from('lehrperson_klassen').select('*, klassen(id,name,stufe,schuljahr,schulen(name))').eq('lehrperson_id', CU.id),
+      sb.from('schueler_milestones').select('validiert_status, schueler_id'),
+    ]);
+    students = sRes.data||[];
+    klassen = kRes.data||[];
+    myKlassen = lkRes.data||[];
+    msStatus = msRes.data||[];
+  }
+
+  // Compute stats
+  const totalMs = msStatus.length;
+  const doneMs = msStatus.filter(m=>m.validiert_status>=2).length;
+  const avgProgress = totalMs>0 ? Math.round(doneMs/totalMs*100) : 0;
+  const alerts = students.filter(s=>s.aktiv).length; // placeholder until alert logic
+  const activeMS = getMS();
+  const unitProgress = [...new Set(activeMS.map(m=>m.unit))].map(u=>{
+    const ms=activeMS.filter(m=>m.unit===u);
+    const done=students.filter(s=>ms.some(m=>msStatus.some(st=>st.schueler_id===s.id&&st.validiert_status>=2))).length;
+    return {u, pct: ms.length>0?Math.round(doneMs/Math.max(totalMs,1)*100):0, label:msUnit(u)};
+  });
+
   c.innerHTML=`
     <div class="g4" style="margin-bottom:16px;">
-      <div class="stat"><div class="stat-val" style="color:var(--teal)">${students.length}</div><div class="stat-label">Schülerinnen & Schüler</div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--teal)">—</div><div class="stat-label">Ø Fortschritt</div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--red)">—</div><div class="stat-label">Alerts</div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--purple)">—</div><div class="stat-label">Vertiefung</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--teal)">${students.length}</div><div class="stat-label">${t('schuelerinnen')}</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--teal)">${avgProgress}%</div><div class="stat-label">${t('fortschritt')}</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--red)">${students.filter(s=>!s.aktiv).length}</div><div class="stat-label">${t('alerts')}</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--purple)">${myKlassen.length}</div><div class="stat-label">Meine Klassen</div></div>
     </div>
-    ${students.length===0?`
-      <div class="alert alert-teal" style="margin-bottom:16px;">${DEMO?'Demo-Modus.':'✓ Supabase 🇨🇭 verbunden.'} Noch keine Schüler erfasst.
-        <button class="btn btn-teal btn-sm" style="margin-left:8px;" onclick="tNav('setup')">Schüler anlegen →</button>
-      </div>
-      <div class="card">
-        <div class="card-title">🚀 Erste Schritte</div>
-        <div style="font-size:13px;line-height:2.2;">
-          <div>1. <strong>Schüler anlegen</strong> → Einstellungen</div>
-          <div>2. <strong>Schüler einloggen</strong> lassen (E-Mail + Passwort)</div>
-          <div>3. <strong>Aufgabenblatt generieren</strong> → Generator</div>
-          <div>4. <strong>Ergebnisse hochladen</strong> → Upload</div>
+    <div class="g2">
+      <div>
+        <div class="card" style="margin-bottom:12px;">
+          <div class="card-title">Meine Klassen</div>
+          ${myKlassen.length===0
+            ? `<div style="color:var(--gray-m);font-size:13px;padding:8px 0;">Noch keine Klassen zugewiesen.<br><span style="font-size:11px;">Admin → Klassen & Fächer → Lehrperson zuweisen.</span></div>`
+            : myKlassen.map(lk=>{
+                const k=lk.klassen;
+                return`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--border);">
+                  <div>
+                    <div style="font-weight:500;font-size:13px;">${k?.schulen?.name||'—'} · Klasse ${k?.name||'—'}</div>
+                    <div style="font-size:11px;color:var(--gray-m);">${k?.schuljahr||''} · Stufe ${k?.stufe||'—'}</div>
+                  </div>
+                  <div style="display:flex;gap:4px;">
+                    <span class="pill pill-teal" style="font-size:10px;">${lk.unterrichtssprache||'DE'}</span>
+                  </div>
+                </div>`;
+              }).join('')}
         </div>
-      </div>`:
-      `<div class="card">
-        <div class="card-title">Schüler</div>
-        <table class="tbl"><thead><tr><th>Name</th><th>E-Mail</th><th>Sprache</th><th>Status</th></tr></thead>
-        <tbody>${students.map(s=>`<tr>
-          <td style="font-weight:500;">${s.vorname} ${s.nachname}</td>
-          <td style="color:var(--gray-m);font-size:12px;">${s.email}</td>
-          <td><span class="pill pill-purple">${s.sprache||'DE'}</span></td>
-          <td><span class="pill ${s.aktiv?'pill-green':'pill-amber'}">${s.aktiv?'Aktiv':'Ausstehend'}</span></td>
-        </tr>`).join('')}</tbody></table>
-      </div>`}`;
+        <div class="card">
+          <div class="card-title">Schnellaktionen</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+            <button class="btn btn-teal btn-sm" style="justify-content:flex-start;" onclick="tNav('generator')">✦ Aufgabenblatt generieren</button>
+            <button class="btn btn-ghost btn-sm" style="justify-content:flex-start;" onclick="tNav('upload')">↑ Ergebnisse hochladen</button>
+            <button class="btn btn-ghost btn-sm" style="justify-content:flex-start;" onclick="tNav('schueler')">👥 Schüler ansehen</button>
+            <button class="btn btn-ghost btn-sm" style="justify-content:flex-start;" onclick="tNav('setup')">+ Schüler anlegen</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:12px;">
+          <div class="card-title">Klassen-Fortschritt</div>
+          ${activeMS.length===0
+            ? `<div style="color:var(--gray-m);font-size:12px;padding:8px 0;">Kein Curriculum geladen.</div>`
+            : unitProgress.map(({u,pct,label})=>`
+              <div style="margin-bottom:10px;">
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
+                  <span>${label}</span>
+                  <span style="color:var(--gray-m);">${pct}%</span>
+                </div>
+                <div style="height:6px;border-radius:3px;background:var(--gray-l);overflow:hidden;">
+                  <div style="height:100%;width:${pct}%;border-radius:3px;background:var(--teal);transition:width .4s;"></div>
+                </div>
+              </div>`).join('')}
+        </div>
+        <div class="card">
+          <div class="card-title">Schüler</div>
+          ${students.length===0
+            ? `<div style="color:var(--gray-m);font-size:12px;padding:8px 0;">Noch keine Schüler erfasst.</div>`
+            : `<table class="tbl"><thead><tr><th>Name</th><th>Sprache</th><th>Status</th></tr></thead>
+               <tbody>${students.slice(0,8).map(s=>`<tr>
+                 <td style="font-weight:500;">${s.vorname} ${s.nachname}</td>
+                 <td><span class="pill pill-purple" style="font-size:10px;">${s.sprache||'DE'}</span></td>
+                 <td><span class="pill ${s.aktiv?'pill-green':'pill-amber'}" style="font-size:10px;">${s.aktiv?'Aktiv':'—'}</span></td>
+               </tr>`).join('')}</tbody></table>
+               ${students.length>8?`<div style="font-size:11px;color:var(--gray-m);margin-top:6px;cursor:pointer;" onclick="tNav('schueler')">+ ${students.length-8} weitere →</div>`:''}`}
+        </div>
+      </div>
+    </div>`;
 }
 
 async function renderSchueler(){
