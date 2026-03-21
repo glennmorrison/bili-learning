@@ -568,11 +568,15 @@ async function renderSchueler(){
     </div>`;
 }
 
-function renderCurr(){
+async function renderCurr(){
   const c=document.getElementById('t-content');
-  const units=[...new Set(MS.map(m=>m.unit))];
+  c.innerHTML='<div class="loadbar"></div>';
+  await loadCurriculumForTeacher();
+  const activeMS=getMS();
+  if(activeMS.length===0){c.innerHTML='<div class="card" style="text-align:center;padding:40px;color:var(--gray-m);">Kein Curriculum geladen.</div>';return;}
+  const units=[...new Set(activeMS.map(m=>m.unit))];
   c.innerHTML=units.map(u=>{
-    const ms=MS.filter(m=>m.unit===u);
+    const ms=activeMS.filter(m=>m.unit===u);
     return`<div class="card" style="margin-bottom:14px;">
       <div class="card-title">${msUnit(u)}</div>
       <table class="tbl"><thead><tr><th>ID</th><th>${t('milestones')}</th><th>Bloom</th><th>★</th><th>Prereq.</th></tr></thead>
@@ -590,13 +594,15 @@ function renderCurr(){
 // ─── GENERATOR ──────────────────────────────────────────
 let GS={selMs:new Set(['MS3.4']),lang:'DE',niveau:1};
 
-function renderGen(){
+async function renderGen(){
   const c=document.getElementById('t-content');
+  await loadCurriculumForTeacher();
+  const activeMS=getMS();
   c.innerHTML=`
     <div style="display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 104px);overflow:hidden;">
       <div style="border-right:1px solid var(--border);overflow-y:auto;padding:16px;background:#fff;">
         <div style="font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Milestones</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">${MS.map(m=>`<div style="padding:3px 8px;border-radius:20px;font-size:10px;font-weight:500;cursor:pointer;border:1.5px solid ${GS.selMs.has(m.id)?'var(--purple)':'var(--border)'};background:${GS.selMs.has(m.id)?'var(--purple-l)':'#fff'};color:${GS.selMs.has(m.id)?'var(--purple)':'var(--gray-m)'};" id="gms-${m.id}" onclick="gtMs('${m.id}')">${m.id}</div>`).join('')}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">${activeMS.map(m=>`<div style="padding:3px 8px;border-radius:20px;font-size:10px;font-weight:500;cursor:pointer;border:1.5px solid ${GS.selMs.has(m.id)?'var(--purple)':'var(--border)'};background:${GS.selMs.has(m.id)?'var(--purple-l)':'#fff'};color:${GS.selMs.has(m.id)?'var(--purple)':'var(--gray-m)'};" id="gms-${m.id}" onclick="gtMs('${m.id}')">${m.id}</div>`).join('')}</div>
         <div style="font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Sprache</div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:12px;">${['DE','EN','bilingual'].map(l=>`<button style="padding:5px;border:1.5px solid ${GS.lang===l?'var(--teal)':'var(--border)'};border-radius:5px;font-size:10px;cursor:pointer;background:${GS.lang===l?'var(--teal-l)':'#fff'};color:${GS.lang===l?'var(--teal)':'var(--gray-m)'};" id="gl-${l}" onclick="gSL('${l}')">${l}</button>`).join('')}</div>
         <div style="font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Niveau</div>
@@ -624,7 +630,7 @@ function gSN(n){GS.niveau=n;[1,2,3,'mix'].forEach(x=>{const e=document.getElemen
 async function gGen(){
   if(!GS.selMs.size){alert('Mind. einen Milestone wählen.');return;}
   const btn=document.getElementById('g-btn');btn.innerHTML='<div class="spinner"></div>';btn.disabled=true;
-  const msList=MS.filter(m=>GS.selMs.has(m.id));
+  const msList=getMS().filter(m=>GS.selMs.has(m.id));
   const anz=parseInt(document.getElementById('g-anz').value)||4;
   const ctx=document.getElementById('g-ctx').value.trim();
   document.getElementById('g-prev').innerHTML='<div class="loadbar"></div><div style="text-align:center;padding:30px;color:var(--gray-m);">✦ Claude generiert…</div>';
@@ -905,7 +911,7 @@ function startST(msId){activeMs=msId;renderSUeben();}
 function sTBox(){return`<div><div style="cursor:pointer;font-size:12px;color:var(--gray-m);margin-bottom:12px;" onclick="activeMs=null;renderSUeben()">← Zurück</div><div id="s-task"><div class="task-box"><div class="loadbar"></div><div style="text-align:center;padding:18px;color:var(--purple);">✦ Aufgabe wird erstellt…</div></div></div></div>`;}
 
 async function genTask(msId){
-  const ms=MS.find(m=>m.id===msId);const isEN=CU?.sprache==='EN';
+  const ms=getMS().find(m=>m.id===msId);const isEN=CU?.sprache==='EN';
   const prompt=`Friendly math teacher grade 5/6. ONE task for ${CU?.vorname||'student'} (${CU?.sprache||'DE'}). Milestone: ${msId} "${ms?.title}" Bloom: ${ms?.bloom}. Language: ${isEN?'English':'Deutsch'}. Fun real-world context. Respond ONLY JSON: {"context":"","question":"","hint":"","solution":"","steps":[""],"xp":15}`;
   try{
     const r=await fetch(SB_FN+'/anthropic-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(SB_KEY),'apikey':(SB_KEY)},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:prompt}]})});
@@ -975,7 +981,7 @@ async function renderSFort(){
   let msStatus={};
   if(!DEMO&&sb&&CU?.id){const{data}=await sb.from('schueler_milestones').select('*').eq('schueler_id',CU.id);(data||[]).forEach(m=>msStatus[m.milestone_id]=m.uebungs_status||0);}
   const getSt=id=>msStatus[id]||0;
-  const done=MS.filter(m=>getSt(m.id)>=2).length;
+  const done=getMS().filter(m=>getSt(m.id)>=2).length;
   const pct=Math.round(done/MS.length*100);
   c.innerHTML=`
     <div class="g2" style="margin-bottom:12px;">
@@ -986,7 +992,7 @@ async function renderSFort(){
         <div style="font-size:12px;color:var(--gray-m);">Milestones</div></div>
     </div>
     ${[...new Set(MS.map(m=>m.unit))].map(u=>{
-      const ms=MS.filter(m=>m.unit===u);const d=ms.filter(m=>getSt(m.id)>=2).length;const p=Math.round(d/ms.length*100);
+      const ms=getMS().filter(m=>m.unit===u);const d=ms.filter(m=>getSt(m.id)>=2).length;const p=Math.round(d/ms.length*100);
       return`<div class="card" style="margin-bottom:9px;">
         <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;"><span style="font-weight:500;">${msUnit(u)}</span><span style="color:var(--gray-m);">${d}/${ms.length}</span></div>
         <div class="progress-bar" style="margin-bottom:6px;"><div class="progress-fill" style="width:${p}%;background:var(--teal)"></div></div>
@@ -1048,6 +1054,45 @@ async function loadDBFromSupabase() {
     }));
   } catch(e) { console.warn('DB load error:', e); }
 }
+
+
+// ─── CURRICULUM FROM SUPABASE ─────────────────────────────
+let SB_MS = []; // Milestones from Supabase (replaces hardcoded MS array)
+
+async function loadCurriculumForTeacher() {
+  if(!sb || DEMO) return;
+  try {
+    // Load milestones for current teacher's classes
+    // For now load all active curricula milestones
+    const {data, error} = await sb
+      .from('milestones')
+      .select('*, curricula(name, stufe, fach_id, land_id)')
+      .order('sort_order');
+    if(data && data.length > 0) {
+      SB_MS = data.map(m => ({
+        id: m.code,
+        title: m.title_de,
+        title_de: m.title_de,
+        title_en: m.title_en || m.title_de,
+        title_fr: m.title_fr || m.title_de,
+        title_it: m.title_it || m.title_de,
+        title_es: m.title_es || m.title_de,
+        title_pt: m.title_pt || m.title_de,
+        en: m.title_en || m.title_de,
+        unit: m.unit || 'Allgemein',
+        bloom: m.bloom_stufe || 'anwenden',
+        niv: m.niveau || 1,
+        pre: [],
+        lp21: m.lp21_ref || '',
+        sb_id: m.id,
+      }));
+      console.log('Milestones from Supabase:', SB_MS.length);
+    }
+  } catch(e) { console.warn('Curriculum load error:', e); }
+}
+
+// Get active milestone array (Supabase if available, fallback to hardcoded MS)
+function getMS() { return SB_MS.length > 0 ? SB_MS : MS; }
 
 function isoToFlag(iso) {
   const flags = {CH:'🇨🇭',DE:'🇩🇪',AT:'🇦🇹',GB:'🇬🇧',FR:'🇫🇷',IT:'🇮🇹',US:'🇺🇸',ES:'🇪🇸'};
