@@ -1559,7 +1559,7 @@ Noah,Fischer,5b,EN,fischer@example.com</div>
 // LEHRPERSONEN
 // ═══════════════════════════════════════════════════════
 function renderLehrpersonen(){
-  document.getElementById('view-actions').innerHTML=`<button class="btn btn-teal" onclick="openNewLpModal()">+ Lehrperson einladen</button>`;
+  document.getElementById('view-actions').innerHTML=`<button class="btn btn-teal" onclick="openNewLpModal()">+ Person anlegen</button>`;
   document.getElementById('view-content').innerHTML=`
     <table class="tbl">
       <thead><tr><th>Name</th><th>Schule</th><th>Fächer</th><th>Klassen</th><th>Rolle</th><th>Aktionen</th></tr></thead>
@@ -1582,21 +1582,14 @@ function renderLehrpersonen(){
 
 function openNewLpModal(){
   openModal(`
-    <div class="modal-title">👩‍🏫 Lehrperson einladen</div>
-    <div class="modal-sub">Einladungs-E-Mail wird automatisch versendet</div>
-    <div class="g2"><div class="field"><label>Vorname</label><input class="inp" placeholder="Sandra" id="m-lp-fn"></div>
-    <div class="field"><label>Nachname</label><input class="inp" placeholder="Meier" id="m-lp-ln"></div></div>
-    <div class="field"><label>E-Mail</label><input class="inp" type="email" placeholder="s.meier@sis.ch" id="m-lp-email"></div>
-    <div class="field"><label>Schule</label>
-      <select class="sel" id="m-lp-schule">
-        ${DB.schulen.map(s=>{const l=DB.laender.find(x=>x.id===s.landId);return`<option value="${s.id}">${l?.flag} ${s.name}</option>`;}).join('')}
-      </select>
+    <div class="modal-title">👩‍🏫 Person anlegen</div>
+    <div class="modal-sub">Account wird direkt erstellt — kein E-Mail nötig</div>
+    <div class="g2">
+      <div class="field"><label>Vorname</label><input class="inp" placeholder="Sandra" id="m-lp-fn"></div>
+      <div class="field"><label>Nachname</label><input class="inp" placeholder="Meier" id="m-lp-ln"></div>
     </div>
-    <div class="field"><label>Fächer</label>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;">
-        ${DB.faecher_pool.slice(0,6).map(f=>`<div class="lang-chip" onclick="this.classList.toggle('on')" style="font-size:12px;">${f}</div>`).join('')}
-      </div>
-    </div>
+    <div class="field"><label>E-Mail</label><input class="inp" type="email" placeholder="s.meier@schule.ch" id="m-lp-email"></div>
+    <div class="field"><label>Passwort</label><input class="inp" type="password" placeholder="Mindestens 8 Zeichen" id="m-lp-pass"></div>
     <div class="field"><label>Rolle</label>
       <select class="sel" id="m-lp-rolle">
         <option value="lehrperson">Lehrperson</option>
@@ -1605,10 +1598,18 @@ function openNewLpModal(){
         <option value="super_admin">Super-Admin</option>
       </select>
     </div>
+    <div class="field"><label>Sprache</label>
+      <select class="sel" id="m-lp-lang">
+        <option value="DE">Deutsch</option>
+        <option value="EN">English</option>
+        <option value="FR">Français</option>
+        <option value="IT">Italiano</option>
+      </select>
+    </div>
     <div id="lp-modal-res" style="margin-bottom:8px;"></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Abbrechen</button>
-      <button class="btn btn-teal" onclick="saveLehrperson()">Einladung senden</button>
+      <button class="btn btn-teal" onclick="saveLehrperson()">Person anlegen</button>
     </div>`);
 }
 
@@ -1623,7 +1624,7 @@ async function saveLehrperson(){
   try{
     const r=await fetch('https://kcvfsmugfsfupzccynoi.supabase.co/functions/v1/create-user',{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjdmZzbXVnZnNmdXB6Y2N5bm9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzkwNzgsImV4cCI6MjA4OTYxNTA3OH0.aUfTFVBpgYTCna57M6kUH7VgUMcfgyPKjRqpm6OvNs4','apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjdmZzbXVnZnNmdXB6Y2N5bm9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzkwNzgsImV4cCI6MjA4OTYxNTA3OH0.aUfTFVBpgYTCna57M6kUH7VgUMcfgyPKjRqpm6OvNs4'},
-      body:JSON.stringify({vorname:fn,nachname:ln,email:email,password:'Bili2026!',rolle:rolle,sprache:'DE'})
+      body:JSON.stringify({vorname:fn,nachname:ln,email:email,password:document.getElementById('m-lp-pass').value||'Bili2026!',rolle:rolle,sprache:document.getElementById('m-lp-lang')?.value||'DE'})
     });
     const d=await r.json();
     if(d.error){res.innerHTML='<div style="color:#A32D2D;font-size:12px;">'+d.error+'</div>';return;}
