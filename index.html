@@ -1167,7 +1167,7 @@ const ALL_LANGS = ['DE','EN','IT','ES','PT','FR'];
 // ═══════════════════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════════════════
-function showView(v){
+async function showView(v){
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('nav-'+v);if(el)el.classList.add('active');
   document.getElementById('view-actions').innerHTML='';
@@ -1188,7 +1188,7 @@ function showView(v){
   document.getElementById('view-title').textContent=title;
   document.getElementById('view-sub').textContent=sub;
   const renders={overview:renderOverview,laender:renderLaender,schulen:renderSchulen,klassen:renderKlassen,faecher:renderFaecher,schueler:renderAdminSchueler,lehrpersonen:renderLehrpersonen,admins:renderAdmins,curriculum:renderCurriculum,schema:renderSchema,datenschutz:renderDatenschutz};
-  if(renders[v])renders[v]();
+  if(renders[v])await renders[v]();
 }
 
 // ═══════════════════════════════════════════════════════
