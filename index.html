@@ -1014,8 +1014,8 @@ async function renderGen(){
         </div>
       </div>
     </div>`;
-}
   if(preselSchueler) setTimeout(gUpdateSchuelerBanner,100);
+}
 
 function gtMs(id){GS.selMs.has(id)?GS.selMs.delete(id):GS.selMs.add(id);const e=document.getElementById('gms-'+id);if(e){e.style.borderColor=GS.selMs.has(id)?'var(--purple)':'var(--border)';e.style.background=GS.selMs.has(id)?'var(--purple-l)':'#fff';e.style.color=GS.selMs.has(id)?'var(--purple)':'var(--gray-m)';}}
 function gSL(l){GS.lang=l;['DE','EN','bilingual'].forEach(x=>{const e=document.getElementById('gl-'+x);if(e){e.style.borderColor=x===l?'var(--teal)':'var(--border)';e.style.background=x===l?'var(--teal-l)':'#fff';e.style.color=x===l?'var(--teal)':'var(--gray-m)';}});}
