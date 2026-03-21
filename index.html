@@ -1087,12 +1087,13 @@ const DB = {
 async function loadDBFromSupabase() {
   if(!sb) return;
   try {
-    const [l, s, k, lp, f] = await Promise.all([
+    const [l, s, k, lp, f, lk] = await Promise.all([
       sb.from('laender').select('*'),
       sb.from('schulen').select('*'),
       sb.from('klassen').select('*, klasse_faecher(fach_id, faecher(name))'),
       sb.from('profiles').select('id,vorname,nachname,email,rolle,sprache').in('rolle',['lehrperson','schulleitung','laender_admin','super_admin']),
       sb.from('faecher').select('*').order('name'),
+      sb.from('lehrperson_klassen').select('lehrperson_id, klasse_id, unterrichtssprache'),
     ]);
     if(l.data) DB.laender = l.data.map(x => ({
       id: x.id, name: x.name, iso: x.iso_code, flag: isoToFlag(x.iso_code),
@@ -1107,12 +1108,15 @@ async function loadDBFromSupabase() {
       id: x.id, schuleId: x.schule_id, name: x.name,
       stufe: x.stufe, schuljahr: x.schuljahr,
       faecher: (x.klasse_faecher||[]).map(fi=>fi.faecher?.name).filter(Boolean),
-      lehrpersonIds: [], schuelerCount: 0
+      lehrpersonIds: (lk.data||[]).filter(r=>r.klasse_id===x.id).map(r=>r.lehrperson_id),
+      lehrpersonSprachen: Object.fromEntries((lk.data||[]).filter(r=>r.klasse_id===x.id).map(r=>[r.lehrperson_id,r.unterrichtssprache])),
+      schuelerCount: 0
     }));
     if(f && f.data && f.data.length>0) DB.faecher_pool = f.data.map(x=>x.name);
     if(lp && lp.data) DB.lehrpersonen = lp.data.map(x=>({
       id:x.id, name:((x.vorname||'')+' '+(x.nachname||'')).trim()||x.email,
-      email:x.email, faecher:[], klassen:[], sprache:x.sprache||'DE'
+      email:x.email, faecher:[], sprache:x.sprache||'DE',
+      klassen:(lk.data||[]).filter(r=>r.lehrperson_id===x.id).map(r=>r.klasse_id),
     }));
   } catch(e) { console.warn('DB load error:', e); }
 }
@@ -1900,7 +1904,7 @@ function renderLehrpersonen(){
       <tbody>${DB.lehrpersonen.map(lp=>{
         return`<tr>
           <td><div style="font-weight:500;">${lp.name}</div><div style="font-size:11px;color:var(--gray-m);">${lp.email}</div></td>
-          <td>${lp.klassen.length>0?lp.klassen[0]:'—'}</td>
+          <td style="font-size:12px;">${lp.klassen.length>0?lp.klassen.map(kid=>{const k=DB.klassen.find(x=>x.id===kid);return k?k.name:'?';}).join(', '):'—'}</td>
           <td><div style="display:flex;gap:3px;flex-wrap:wrap;">${lp.faecher.map(f=>`<span class="pill pill-amber" style="font-size:10px;">${f}</span>`).join('')}</div></td>
           <td style="font-size:12px;color:var(--gray-m);">${lp.klassen.length} Klasse${lp.klassen.length!==1?'n':''}</td>
           <td><span class="pill pill-teal">Lehrperson</span></td>
