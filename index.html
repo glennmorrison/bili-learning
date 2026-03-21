@@ -1150,7 +1150,7 @@ async function loadDBFromSupabase() {
     }));
     if(k.data) DB.klassen = k.data.map(x => ({
       id: x.id, schuleId: x.schule_id, name: x.name,
-      stufe: x.stufe, schuljahr: x.schuljahr,
+      stufe: x.stufe, schuljahr: x.schuljahr, buchstabe: x.klasse_buchstabe||'',
       faecher: (x.klasse_faecher||[]).map(fi=>({
         name: fi.faecher?.name,
         fachId: fi.fach_id,
@@ -1570,7 +1570,7 @@ function renderKlassen(){
         const land=DB.laender.find(l=>l.id===schule?.landId);
         const lps=k.lehrpersonIds.map(id=>DB.lehrpersonen.find(l=>l.id===id)?.name||id);
         return`<tr>
-          <td><div style="font-weight:500;">${schule?.name||''} ${k.name}</div><div style="font-size:11px;color:var(--gray-m);">${k.schuljahr}</div></td>
+          <td><div style="font-weight:500;">${schule?.name||''} ${k.name}</div><div style="font-size:11px;color:var(--gray-m);">${k.schuljahr} · Stufe ${k.stufe}</div></td>
           <td>${land?.flag} ${schule?.name||'—'}</td>
           <td><span class="pill pill-teal">${k.stufe}. Klasse</span></td>
           <td><div style="display:flex;gap:3px;flex-wrap:wrap;">${k.faecher.map(f=>`<span class="pill pill-amber" style="font-size:10px;">${f.name||f}</span>`).join('')}</div></td>
@@ -1594,11 +1594,15 @@ function openNewKlasseModal(){
         ${DB.schulen.map(s=>{const l=DB.laender.find(x=>x.id===s.landId);return`<option value="${s.id}">${l?.flag} ${s.name}</option>`;}).join('')}
       </select>
     </div>
-    <div class="field"><label>Klassenbezeichnung</label><input class="inp" placeholder="5b" id="m-kl-name"></div>
-    <div class="field"><label>Stufe</label>
-      <select class="sel" id="m-kl-stufe">
-        ${[1,2,3,4,5,6,7,8,9].map(s=>`<option value="${s}">${s}. Klasse</option>`).join('')}
-      </select>
+    <div class="g2">
+      <div class="field"><label>Stufe</label>
+        <select class="sel" id="m-kl-stufe">
+          ${[1,2,3,4,5,6,7,8,9].map(s=>`<option value="${s}">${s}. Klasse</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Klasse (Buchstabe)</label>
+        <input class="inp" placeholder="a" maxlength="5" id="m-kl-buchstabe">
+      </div>
     </div>
     <div class="field"><label>Schuljahr</label><input class="inp" value="2025/26" id="m-kl-sj"></div>
     <div class="field">
@@ -1609,7 +1613,7 @@ function openNewKlasseModal(){
     </div>
     <div class="field"><label>Lehrperson(en) zuweisen</label>
       <select class="sel" id="m-kl-lp" multiple style="min-height:80px;">
-        ${DB.lehrpersonen.map(l=>`<option value="${l.id}">${l.name} (${l.faecher.join(', ')})</option>`).join('')}
+        ${DB.lehrpersonen.map(l=>`<option value="${l.id}">${l.name}</option>`).join('')}
       </select>
     </div>
     <div class="modal-footer">
@@ -1628,7 +1632,17 @@ async function openEditKlasseModal(id){
   openModal(`
     <div class="modal-title">✏️ ${schule?.name} ${k.name}</div>
     <div class="modal-sub">Klasse bearbeiten — ${k.schuljahr}</div>
-    <div class="field"><label>Klassenbezeichnung</label><input class="inp" value="${k.name}" id="m-kl-name"></div>
+    <div class="g2">
+      <div class="field"><label>Stufe</label>
+        <select class="sel" id="m-kl-stufe">
+          ${[1,2,3,4,5,6,7,8,9].map(s=>`<option value="${s}" ${k.stufe===s?'selected':''}>${s}. Klasse</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Klasse (Buchstabe)</label>
+        <input class="inp" value="${k.buchstabe||''}" maxlength="5" id="m-kl-buchstabe">
+      </div>
+    </div>
+    <div class="field"><label>Schuljahr</label><input class="inp" value="${k.schuljahr||'2025/26'}" id="m-kl-sj"></div>
     <div class="field">
       <label>Fächer & Curriculum</label>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;" id="m-fach-list">
@@ -1671,15 +1685,16 @@ async function openEditKlasseModal(id){
 }
 
 async function saveNewKlasse(){
-  const name=document.getElementById('m-kl-name').value;
-  const schuleId=document.getElementById('m-kl-schule').value;
   const stufe=parseInt(document.getElementById('m-kl-stufe').value);
+  const buchstabe=document.getElementById('m-kl-buchstabe').value.trim().toLowerCase()||'a';
+  const name=stufe+buchstabe;
+  const schuleId=document.getElementById('m-kl-schule').value;
   const sj=document.getElementById('m-kl-sj').value;
   const faecher=[...document.querySelectorAll('#m-fach-chips .lang-chip.on')].map(el=>el.textContent);
-  if(!name||!faecher.length){alert('Name und mind. 1 Fach erforderlich.');return;}
+  if(!faecher.length){alert('Mind. 1 Fach erforderlich.');return;}
   if(sb){
     const{data,error}=await sb.from('klassen').insert({
-      name,schule_id:schuleId,stufe,schuljahr:sj,aktiv:true
+      name,schule_id:schuleId,stufe,schuljahr:sj,aktiv:true,klasse_buchstabe:buchstabe
     }).select().single();
     if(error){alert('Fehler: '+error.message);return;}
     // Insert faecher
@@ -1697,7 +1712,10 @@ async function saveNewKlasse(){
 }
 
 async function saveEditKlasse(id){
-  const name=document.getElementById('m-kl-name').value;
+  const stufe=parseInt(document.getElementById('m-kl-stufe').value);
+  const buchstabe=document.getElementById('m-kl-buchstabe').value.trim().toLowerCase()||'a';
+  const name=stufe+buchstabe;
+  const sj=document.getElementById('m-kl-sj').value;
   // Fächer mit Curriculum sammeln
   const selFaecher=[...document.querySelectorAll('#m-fach-list input[type=checkbox]:checked')].map(cb=>({
     name:cb.value,
@@ -1709,7 +1727,7 @@ async function saveEditKlasse(id){
     lang:document.getElementById('lp-lang-'+cb.value)?.value||'DE'
   }));
   if(sb){
-    await sb.from('klassen').update({name}).eq('id',id);
+    await sb.from('klassen').update({name,stufe,schuljahr:sj,klasse_buchstabe:buchstabe}).eq('id',id);
     // klasse_faecher: delete + reinsert mit curriculum_id
     await sb.from('klasse_faecher').delete().eq('klasse_id',id);
     for(const f of selFaecher){
