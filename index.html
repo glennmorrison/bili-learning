@@ -1050,7 +1050,7 @@ function showView(v){
   const [title,sub]=views[v]||['Admin',''];
   document.getElementById('view-title').textContent=title;
   document.getElementById('view-sub').textContent=sub;
-  const renders={overview:renderOverview,laender:renderLaender,schulen:renderSchulen,klassen:renderKlassen,schueler:renderSchueler,lehrpersonen:renderLehrpersonen,admins:renderAdmins,curriculum:renderCurriculum,schema:renderSchema,datenschutz:renderDatenschutz};
+  const renders={overview:renderOverview,laender:renderLaender,schulen:renderSchulen,klassen:renderKlassen,schueler:renderAdminSchueler,lehrpersonen:renderLehrpersonen,admins:renderAdmins,curriculum:renderCurriculum,schema:renderSchema,datenschutz:renderDatenschutz};
   if(renders[v])renders[v]();
 }
 
@@ -1460,7 +1460,7 @@ function saveEditKlasse(id){
 // ═══════════════════════════════════════════════════════
 // SCHÜLER
 // ═══════════════════════════════════════════════════════
-function renderSchueler(){
+function renderAdminSchueler(){
   document.getElementById('view-actions').innerHTML=`
     <div style="display:flex;gap:8px;">
       <button class="btn btn-ghost" onclick="openImportModal()">CSV Import</button>
