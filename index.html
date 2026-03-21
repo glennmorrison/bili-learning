@@ -479,6 +479,7 @@ function buildTeacher(){
       <div class="sidebar-nav">
         <div class="nav-sec">Übersicht</div>
         <div class="nav-item active" id="tnav-dashboard" onclick="tNav('dashboard')"><span class="ic">📊</span>Dashboard</div>
+        <div class="nav-item" id="tnav-matrix" onclick="tNav('matrix')"><span class="ic">🎯</span>Klassen-Matrix</div>
         <div class="nav-item" id="tnav-schueler" onclick="tNav('schueler')"><span class="ic">👥</span>Schüler</div>
         <div class="nav-item" id="tnav-curriculum" onclick="tNav('curriculum')"><span class="ic">📚</span>Curriculum</div>
         <div class="nav-sec">Werkzeuge</div>
@@ -503,9 +504,9 @@ function buildTeacher(){
 function tNav(v){
   document.querySelectorAll('.nav-item[id^="tnav-"]').forEach(e=>e.classList.remove('active'));
   const el=document.getElementById('tnav-'+v);if(el)el.classList.add('active');
-  document.getElementById('t-title').textContent={dashboard:'Dashboard',schueler:'Schüler',curriculum:'Curriculum',generator:'Aufgabenblatt',upload:'Upload & Auswertung',setup:'Einstellungen'}[v]||v;
+  document.getElementById('t-title').textContent={dashboard:'Dashboard',matrix:'Klassen-Matrix',schueler:'Schüler',dossier:'Schüler-Dossier',curriculum:'Curriculum',generator:'Aufgabenblatt',upload:'Upload & Auswertung',setup:'Einstellungen'}[v]||v;
   document.getElementById('t-act').innerHTML='';
-  ({dashboard:renderDash,schueler:renderSchueler,curriculum:renderCurr,generator:renderGen,upload:renderUpload,setup:renderSetup})[v]?.();
+  ({dashboard:renderDash,matrix:renderMatrix,schueler:renderSchueler,dossier:renderDossier,curriculum:renderCurr,generator:renderGen,upload:renderUpload,setup:renderSetup})[v]?.();
 }
 
 async function renderDash(){
@@ -659,6 +660,194 @@ async function renderDash(){
     </div>`;
 }
 
+
+// ═══════════════════════════════════════════════════════
+// KLASSEN-MATRIX
+// ═══════════════════════════════════════════════════════
+async function renderMatrix(){
+  const c=document.getElementById('t-content');
+  c.innerHTML='<div class="loadbar"></div>';
+  await loadCurriculumForTeacher();
+  const ms=getMS();
+  if(!ms.length){c.innerHTML='<div class="card" style="text-align:center;padding:40px;color:var(--gray-m);">Kein Curriculum für diese Klasse.</div>';return;}
+
+  // Schüler der gewählten Klasse laden
+  const{data:lkData}=await sb.from('lehrperson_klassen').select('klasse_id').eq('lehrperson_id',CU.id);
+  const alleKlassenIds=[...new Set((lkData||[]).map(x=>x.klasse_id))];
+  const targetKlasseId=window._dashKlasseId&&alleKlassenIds.includes(window._dashKlasseId)?window._dashKlasseId:alleKlassenIds[0];
+  let schueler=[], msStatus=[];
+  if(targetKlasseId){
+    const{data:skData}=await sb.from('schueler_klassen').select('schueler_id').eq('klasse_id',targetKlasseId);
+    const ids=[...new Set((skData||[]).map(x=>x.schueler_id))];
+    if(ids.length){
+      const[{data:sData},{data:msData}]=await Promise.all([
+        sb.from('profiles').select('id,vorname,nachname').in('id',ids),
+        sb.from('schueler_milestones').select('schueler_id,milestone_id,uebungs_status,validiert_status').in('schueler_id',ids)
+      ]);
+      schueler=sData||[];
+      msStatus=msData||[];
+    }
+  }
+
+  // MS nach Unit gruppieren
+  const units=[...new Set(ms.map(m=>m.unit))];
+  const statusColor=(s,v)=>{
+    if(v>=2) return 'var(--green)';
+    if(v===1||s>=1) return 'var(--amber)';
+    return 'var(--border)';
+  };
+  const statusLabel=(s,v)=>{
+    if(v>=2) return '✓';
+    if(v===1||s>=1) return '▶';
+    return '';
+  };
+
+  c.innerHTML=`
+    <div style="overflow-x:auto;">
+      <table style="border-collapse:collapse;font-size:12px;min-width:600px;">
+        <thead>
+          <tr>
+            <th style="padding:8px 12px;text-align:left;background:var(--gray-l);border-bottom:1px solid var(--border);position:sticky;left:0;z-index:2;min-width:140px;">Schüler/in</th>
+            ${units.map(u=>{
+              const uMs=ms.filter(m=>m.unit===u);
+              return`<th colspan="${uMs.length}" style="padding:6px 8px;text-align:center;background:var(--teal-l);border-bottom:1px solid var(--border);border-left:2px solid var(--teal);color:var(--teal);font-size:10px;white-space:nowrap;">${msUnit(u)}</th>`;
+            }).join('')}
+            <th style="padding:8px;text-align:center;background:var(--gray-l);border-bottom:1px solid var(--border);">%</th>
+          </tr>
+          <tr>
+            <th style="padding:4px 12px;background:var(--gray-l);position:sticky;left:0;z-index:2;border-bottom:1px solid var(--border);"></th>
+            ${ms.map(m=>`<th style="padding:4px 6px;text-align:center;background:var(--gray-ll);border-bottom:1px solid var(--border);border-left:1px solid var(--border);font-weight:400;color:var(--gray-m);font-size:9px;white-space:nowrap;max-width:40px;overflow:hidden;" title="${msTitle(m)}">${m.id}</th>`).join('')}
+            <th style="background:var(--gray-ll);border-bottom:1px solid var(--border);"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${schueler.length===0?`<tr><td colspan="${ms.length+2}" style="padding:30px;text-align:center;color:var(--gray-m);">Keine Schüler in dieser Klasse.</td></tr>`:''}
+          ${schueler.map(s=>{
+            const sStatus=msStatus.filter(x=>x.schueler_id===s.id);
+            const done=sStatus.filter(x=>x.validiert_status>=2).length;
+            const pct=ms.length?Math.round(done/ms.length*100):0;
+            return`<tr style="cursor:pointer;" onclick="openDossier('${s.id}','${s.vorname} ${s.nachname}')" onmouseover="this.style.background='var(--gray-ll)'" onmouseout="this.style.background=''">
+              <td style="padding:8px 12px;font-weight:500;position:sticky;left:0;background:#fff;border-bottom:1px solid var(--border);white-space:nowrap;">${s.vorname} ${s.nachname}</td>
+              ${ms.map(m=>{
+                const st=sStatus.find(x=>x.milestone_id===m.sb_id)||{};
+                const col=statusColor(st.uebungs_status,st.validiert_status);
+                const lbl=statusLabel(st.uebungs_status,st.validiert_status);
+                return`<td style="padding:4px;text-align:center;border-bottom:1px solid var(--border);border-left:1px solid var(--border);">
+                  <div style="width:28px;height:28px;border-radius:6px;background:${col};margin:auto;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;">${lbl}</div>
+                </td>`;
+              }).join('')}
+              <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);font-weight:600;color:${pct>=80?'var(--green)':pct>=40?'var(--amber)':'var(--gray-m)'};">${pct}%</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:12px;font-size:11px;color:var(--gray-m);">
+      <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--green);margin-right:4px;"></span>Validiert</span>
+      <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--amber);margin-right:4px;"></span>In Arbeit</span>
+      <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--border);margin-right:4px;"></span>Nicht begonnen</span>
+      <span style="margin-left:auto;">Klick auf Schüler → Dossier</span>
+    </div>`;
+}
+
+function openDossier(schuelerID, name){
+  window._dossierSchuelerID=schuelerID;
+  window._dossierName=name;
+  tNav('dossier');
+}
+
+// ═══════════════════════════════════════════════════════
+// SCHÜLER-DOSSIER
+// ═══════════════════════════════════════════════════════
+async function renderDossier(){
+  const c=document.getElementById('t-content');
+  const sid=window._dossierSchuelerID;
+  if(!sid){c.innerHTML='<div class="card" style="padding:40px;text-align:center;color:var(--gray-m);">Kein Schüler ausgewählt.</div>';return;}
+  c.innerHTML='<div class="loadbar"></div>';
+
+  await loadCurriculumForTeacher();
+  const ms=getMS();
+
+  const[{data:profile},{data:msData},{data:klData}]=await Promise.all([
+    sb.from('profiles').select('*').eq('id',sid).single(),
+    sb.from('schueler_milestones').select('*').eq('schueler_id',sid),
+    sb.from('schueler_klassen').select('klasse_id, klassen(name,schuljahr,stufe,schulen(name))').eq('schueler_id',sid)
+  ]);
+
+  const s=profile||{};
+  const msStatus=msData||[];
+  const klassen=klData||[];
+  const done=msStatus.filter(x=>x.validiert_status>=2).length;
+  const inProgress=msStatus.filter(x=>x.validiert_status<2&&(x.uebungs_status||0)>=1).length;
+  const pct=ms.length?Math.round(done/ms.length*100):0;
+  const units=[...new Set(ms.map(m=>m.unit))];
+
+  document.getElementById('t-act').innerHTML=`
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="tNav('matrix')">← Matrix</button>
+      <button class="btn btn-teal btn-sm" onclick="window._genSchuelerID='${sid}';window._genSchuelerName='${s.vorname} ${s.nachname}';tNav('generator')">✦ Aufgabe generieren</button>
+    </div>`;
+
+  c.innerHTML=`
+    <div class="g2" style="margin-bottom:16px;">
+      <div class="card" style="border-top:3px solid var(--teal);">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+          <div style="width:48px;height:48px;border-radius:50%;background:var(--teal-l);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:18px;color:var(--teal);">${(s.vorname||'?')[0]}${(s.nachname||'')[0]||''}</div>
+          <div>
+            <div style="font-family:var(--serif);font-size:18px;">${s.vorname} ${s.nachname}</div>
+            <div style="font-size:11px;color:var(--gray-m);">${s.email} · ${s.sprache||'DE'}</div>
+          </div>
+        </div>
+        ${klassen.map(k=>`<div style="font-size:12px;color:var(--gray-m);">📚 ${k.klassen?.schulen?.name} ${k.klassen?.name} · ${k.klassen?.schuljahr} · Stufe ${k.klassen?.stufe}</div>`).join('')}
+      </div>
+      <div class="g2" style="gap:10px;">
+        <div class="stat"><div class="stat-val" style="color:var(--green);">${done}</div><div class="stat-label">Validiert</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--amber);">${inProgress}</div><div class="stat-label">In Arbeit</div></div>
+        <div class="stat" style="grid-column:span 2;"><div class="stat-val" style="color:var(--teal);">${pct}%</div><div class="stat-label">Gesamtfortschritt</div>
+          <div class="progress-bar" style="margin-top:8px;"><div class="progress-fill" style="width:${pct}%;background:var(--teal);"></div></div>
+        </div>
+      </div>
+    </div>
+
+    ${units.map(u=>{
+      const uMs=ms.filter(m=>m.unit===u);
+      return`<div class="card" style="margin-bottom:12px;">
+        <div class="card-title">${msUnit(u)}</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          ${uMs.map(m=>{
+            const st=msStatus.find(x=>x.milestone_id===m.sb_id)||{};
+            const v=st.validiert_status||0;
+            const u2=st.uebungs_status||0;
+            const statusPill=v>=2?'<span class="pill pill-green" style="font-size:10px;">✓ Validiert</span>':
+              u2>=1?'<span class="pill pill-amber" style="font-size:10px;">▶ In Arbeit</span>':
+              '<span class="pill pill-gray" style="font-size:10px;">— Nicht begonnen</span>';
+            return`<div style="display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--border);border-radius:var(--rs);">
+              <code style="font-size:10px;background:var(--gray-l);padding:2px 6px;border-radius:4px;flex-shrink:0;">${m.id}</code>
+              <span style="flex:1;font-size:13px;">${msTitle(m)}</span>
+              ${statusPill}
+              <button class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 8px;" 
+                onclick="toggleMilestone('${sid}','${m.sb_id}',${v})">
+                ${v>=2?'↩ Rücksetzen':'✓ Validieren'}
+              </button>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+async function toggleMilestone(schuelerID, milestoneID, currentV){
+  if(!sb) return;
+  const newV=currentV>=2?0:2;
+  const{data:existing}=await sb.from('schueler_milestones').select('id').eq('schueler_id',schuelerID).eq('milestone_id',milestoneID).single();
+  if(existing){
+    await sb.from('schueler_milestones').update({validiert_status:newV,uebungs_status:newV>=2?2:0}).eq('schueler_id',schuelerID).eq('milestone_id',milestoneID);
+  } else {
+    await sb.from('schueler_milestones').insert({schueler_id:schuelerID,milestone_id:milestoneID,validiert_status:newV,uebungs_status:newV>=2?2:0});
+  }
+  renderDossier();
+}
+
 async function renderSchueler(){
   const c=document.getElementById('t-content');
   c.innerHTML='<div class="loadbar"></div>';
@@ -749,9 +938,32 @@ async function renderGen(){
   const c=document.getElementById('t-content');
   await loadCurriculumForTeacher();
   const activeMS=getMS();
+
+  // Klassen des Lehrers für Dropdown
+  const{data:lkAll}=await sb.from('lehrperson_klassen').select('klasse_id,fach_id,klassen(id,name,schuljahr),faecher(name)').eq('lehrperson_id',CU.id);
+  const klassenOpts=[...new Map((lkAll||[]).map(x=>[x.klasse_id,x])).values()];
+
+  // Schüler der gewählten Klasse
+  const selKid=window._dashKlasseId||klassenOpts[0]?.klasse_id;
+  const{data:skData}=selKid?await sb.from('schueler_klassen').select('schueler_id,profiles(id,vorname,nachname)').eq('klasse_id',selKid):{data:[]};
+  const schuelerOpts=(skData||[]).map(x=>x.profiles).filter(Boolean);
+
+  // Vorausgewählter Schüler (aus Dossier)
+  const preselSchueler=window._genSchuelerID||'';
+  const preselName=window._genSchuelerName||'';
+
   c.innerHTML=`
     <div style="display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 104px);overflow:hidden;">
       <div style="border-right:1px solid var(--border);overflow-y:auto;padding:16px;background:#fff;">
+        <div style="font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Klasse</div>
+        <select class="sel" style="font-size:11px;padding:5px 8px;margin-bottom:10px;" id="g-klasse" onchange="window._dashKlasseId=this.value;window._genSchuelerID='';renderGen()">
+          ${klassenOpts.map(x=>`<option value="${x.klasse_id}" ${x.klasse_id===selKid?'selected':''}>${x.klassen?.name} (${x.klassen?.schuljahr})</option>`).join('')}
+        </select>
+        <div style="font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Für</div>
+        <select class="sel" style="font-size:11px;padding:5px 8px;margin-bottom:10px;" id="g-schueler">
+          <option value="">Ganze Klasse</option>
+          ${schuelerOpts.map(s=>`<option value="${s.id}" ${s.id===preselSchueler?'selected':''}>${s.vorname} ${s.nachname}</option>`).join('')}
+        </select>
         <div style="font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Milestones</div>
         <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">${activeMS.map(m=>`<div style="padding:3px 8px;border-radius:20px;font-size:10px;font-weight:500;cursor:pointer;border:1.5px solid ${GS.selMs.has(m.id)?'var(--purple)':'var(--border)'};background:${GS.selMs.has(m.id)?'var(--purple-l)':'#fff'};color:${GS.selMs.has(m.id)?'var(--purple)':'var(--gray-m)'};" id="gms-${m.id}" onclick="gtMs('${m.id}')">${m.id}</div>`).join('')}</div>
         <div style="font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Sprache</div>
@@ -786,7 +998,15 @@ async function gGen(){
   const ctx=document.getElementById('g-ctx').value.trim();
   document.getElementById('g-prev').innerHTML='<div class="loadbar"></div><div style="text-align:center;padding:30px;color:var(--gray-m);">✦ Claude generiert…</div>';
   try{
-    const r=await fetch(SB_FN+'/anthropic-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(SB_KEY),'apikey':(SB_KEY)},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:`Expert primary math teacher. Create ${anz} tasks. Language: ${GS.lang==='EN'?'English':GS.lang==='bilingual'?'bilingual DE/EN':'Deutsch'}. Milestones: ${msList.map(m=>m.id+' "'+m.title+'"').join(', ')}. Niveau: ${'★'.repeat(typeof GS.niveau==='number'?GS.niveau:2)}. ${ctx?'Theme: "'+ctx+'"':'Use varied grade 5/6 contexts.'} Respond ONLY JSON: {"tasks":[{"milestone_id":"","context":"","question":"","solution":"","bloom":"","niveau":1}]}`}]})});
+    const selSchuelerID=document.getElementById('g-schueler')?.value||'';
+  let schuelerCtx='';
+  if(selSchuelerID){
+    const{data:msCtx}=await sb.from('schueler_milestones').select('milestone_id,uebungs_status,validiert_status').eq('schueler_id',selSchuelerID);
+    const done=(msCtx||[]).filter(x=>x.validiert_status>=2).map(x=>x.milestone_id);
+    const inProg=(msCtx||[]).filter(x=>x.validiert_status<2&&x.uebungs_status>=1).map(x=>x.milestone_id);
+    schuelerCtx=`Student context: ${done.length} milestones validated, ${inProg.length} in progress. Focus on their current level.`;
+  }
+  const r=await fetch(SB_FN+'/anthropic-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(SB_KEY),'apikey':(SB_KEY)},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:`Expert primary school teacher. Create ${anz} tasks for ${selSchuelerID?'an individual student':'the whole class'}. ${schuelerCtx} Language: ${GS.lang==='EN'?'English':GS.lang==='bilingual'?'bilingual DE/EN':'Deutsch'}. Milestones: ${msList.map(m=>m.id+' "'+m.title+'"').join(', ')}. Niveau: ${'★'.repeat(typeof GS.niveau==='number'?GS.niveau:2)}. ${ctx?'Theme: "'+ctx+'"':'Use varied age-appropriate contexts.'} Respond ONLY JSON: {"tasks":[{"milestone_id":"","context":"","question":"","solution":"","bloom":"","niveau":1}]}`}]})});
     const d=await r.json();
     const raw=d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
     gRender(JSON.parse(raw).tasks);
