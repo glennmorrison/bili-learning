@@ -1124,6 +1124,7 @@ const DB = {
   klassen: [],
   lehrpersonen: [],
   faecher_pool: ['Mathematik','Deutsch','Englisch','Französisch','Naturwissenschaften','Geschichte','Geografie','Musik','Sport','Kunst','Informatik'],
+  faecher_list: [],
   rollen: ['super_admin','laender_admin','schulleitung','lehrperson','schueler','eltern'],
 };
 
@@ -1136,7 +1137,7 @@ async function loadDBFromSupabase() {
       sb.from('schulen').select('*'),
       sb.from('klassen').select('*, klasse_faecher(fach_id, curriculum_id, faecher(name))'),
       sb.from('profiles').select('id,vorname,nachname,email,rolle,sprache').in('rolle',['lehrperson','schulleitung','laender_admin','super_admin']),
-      sb.from('faecher').select('*').order('name'),
+      sb.from('faecher').select('id, name, is_bilingual').order('name'),
       sb.from('lehrperson_klassen').select('lehrperson_id, klasse_id, unterrichtssprache, fach_id'),
     ]);
     if(l.data) DB.laender = l.data.map(x => ({
@@ -1158,10 +1159,17 @@ async function loadDBFromSupabase() {
       })).filter(fi=>fi.name),
       lehrpersonIds: (lk.data||[]).filter(r=>r.klasse_id===x.id).map(r=>r.lehrperson_id),
       lehrpersonSprachen: Object.fromEntries((lk.data||[]).filter(r=>r.klasse_id===x.id).map(r=>[r.lehrperson_id,r.unterrichtssprache])),
-      lehrpersonIds_byFach: Object.fromEntries((lk.data||[]).filter(r=>r.klasse_id===x.id&&r.fach_id).map(r=>[r.fach_id,{lpId:r.lehrperson_id,lang:r.unterrichtssprache}])),
+      lehrpersonIds_byFach: (lk.data||[]).filter(r=>r.klasse_id===x.id&&r.fach_id).reduce((acc,r)=>{
+        if(!acc[r.fach_id]) acc[r.fach_id]=[];
+        acc[r.fach_id].push({lpId:r.lehrperson_id,lang:r.unterrichtssprache});
+        return acc;
+      },{}),
       schuelerCount: 0
     }));
-    if(f && f.data && f.data.length>0) DB.faecher_pool = f.data.map(x=>x.name);
+    if(f && f.data && f.data.length>0) {
+      DB.faecher_pool = f.data.map(x=>x.name);
+      DB.faecher_list = f.data; // [{id, name, is_bilingual}]
+    }
     if(lp && lp.data) DB.lehrpersonen = lp.data.map(x=>({
       id:x.id, name:((x.vorname||'')+' '+(x.nachname||'')).trim()||x.email,
       email:x.email, faecher:[], sprache:x.sprache||'DE',
@@ -1570,9 +1578,13 @@ function renderKlassen(){
         const schule=DB.schulen.find(s=>s.id===k.schuleId);
         const land=DB.laender.find(l=>l.id===schule?.landId);
         const lps=k.faecher.map(f=>{
-          const lkEntry=k.lehrpersonIds_byFach?.[f.fachId];
-          const lpName=lkEntry?DB.lehrpersonen.find(l=>l.id===lkEntry.lpId)?.name:null;
-          return lpName?`${f.name}: ${lpName}`:null;
+          const entries=(k.lehrpersonIds_byFach||{})[f.fachId]||[];
+          if(!entries.length) return null;
+          const names=entries.map(e=>{
+            const lp=DB.lehrpersonen.find(l=>l.id===e.lpId);
+            return lp?`${lp.name} (${e.lang})`:null;
+          }).filter(Boolean);
+          return names.length?`${f.name}: ${names.join(', ')}`:null;
         }).filter(Boolean);
         return`<tr>
           <td><div style="font-weight:500;">${schule?.name||''} ${k.name}</div><div style="font-size:11px;color:var(--gray-m);">${k.schuljahr} · Stufe ${k.stufe}</div></td>
@@ -1673,24 +1685,33 @@ async function openEditKlasseModal(id){
         ${DB.faecher_pool.map(f=>{
           const fachObj=k.faecher.find(fi=>fi.name===f);
           if(!fachObj) return '';
-          const existing=k.lehrpersonIds_byFach?.[fachObj.fachId]||{};
+          const fachMeta=DB.faecher_list.find(x=>x.id===fachObj.fachId)||{};
+          const isBilingual=fachMeta.is_bilingual||false;
+          // existing: array of {lpId, lang} for this fach
+          const existingAll=(k.lehrpersonIds_byFach||{})[fachObj.fachId]||[];
           return`<div style="background:var(--gray-ll);border-radius:var(--rs);padding:10px;">
-            <div style="font-size:11px;font-weight:600;color:var(--gray-m);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">${f}</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <span style="font-size:11px;font-weight:600;color:var(--gray-m);text-transform:uppercase;letter-spacing:.04em;">${f}</span>
+              ${isBilingual?'<span class="pill pill-purple" style="font-size:9px;">Bilingual</span>':''}
+            </div>
             ${DB.lehrpersonen.map(l=>{
-              const isSelected=existing.lpId===l.id;
-              const currentLang=existing.lang||'DE';
+              const existing=existingAll.find(e=>e.lpId===l.id);
+              const isSelected=!!existing;
+              const currentLang=existing?.lang||'DE';
+              const inputType=isBilingual?'checkbox':'radio';
+              const inputName=isBilingual?`lp-bi-${fachObj.fachId}-${l.id}`:`lp-fach-${fachObj.fachId}`;
               return`<div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border:1.5px solid var(--border);border-radius:var(--rs);background:#fff;margin-bottom:5px;">
-                <input type="radio" name="lp-fach-${fachObj.fachId}" id="lp-${fachObj.fachId}-${l.id}" value="${l.id}" ${isSelected?'checked':''} style="width:15px;height:15px;accent-color:var(--teal);">
+                <input type="${inputType}" name="${inputName}" id="lp-${fachObj.fachId}-${l.id}" value="${l.id}" ${isSelected?'checked':''} style="width:15px;height:15px;accent-color:var(--teal);">
                 <label for="lp-${fachObj.fachId}-${l.id}" style="flex:1;font-size:13px;cursor:pointer;">${l.name}</label>
                 <select class="sel" id="lp-lang-${fachObj.fachId}-${l.id}" style="width:80px;padding:5px 8px;font-size:12px;">
                   ${sprachen.map(s=>`<option value="${s}" ${currentLang===s?'selected':''}>${s}</option>`).join('')}
                 </select>
               </div>`;
             }).join('')}
-            <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border:1.5px solid var(--border);border-radius:var(--rs);background:#fff;">
-              <input type="radio" name="lp-fach-${fachObj.fachId}" id="lp-${fachObj.fachId}-none" value="" checked style="width:15px;height:15px;accent-color:var(--teal);">
+            ${!isBilingual?`<div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border:1.5px solid var(--border);border-radius:var(--rs);background:#fff;">
+              <input type="radio" name="lp-fach-${fachObj.fachId}" id="lp-${fachObj.fachId}-none" value="" style="width:15px;height:15px;accent-color:var(--teal);">
               <label for="lp-${fachObj.fachId}-none" style="flex:1;font-size:12px;color:var(--gray-m);cursor:pointer;">— Keine Lehrperson —</label>
-            </div>
+            </div>`:''}
           </div>`;
         }).join('')}
       </div>
@@ -1752,15 +1773,29 @@ async function saveEditKlasse(id){
     // lehrperson_klassen: delete + reinsert pro Fach
     await sb.from('lehrperson_klassen').delete().eq('klasse_id',id);
     for(const f of selFaecher){
-      const{data:fach}=await sb.from('faecher').select('id').eq('name',f.name).single();
+      const{data:fach}=await sb.from('faecher').select('id,is_bilingual').eq('name',f.name).single();
       if(!fach) continue;
-      const radio=document.querySelector(`input[name="lp-fach-${fach.id}"]:checked`);
-      if(!radio||!radio.value) continue;
-      const lang=document.getElementById(`lp-lang-${fach.id}-${radio.value}`)?.value||'DE';
-      await sb.from('lehrperson_klassen').insert({
-        lehrperson_id:radio.value, klasse_id:id,
-        fach_id:fach.id, unterrichtssprache:lang
-      });
+      if(fach.is_bilingual){
+        // Bilingual: alle Checkboxen die checked sind
+        const checked=[...document.querySelectorAll(`input[id^="lp-${fach.id}-"]:checked`)];
+        for(const cb of checked){
+          if(!cb.value) continue;
+          const lang=document.getElementById(`lp-lang-${fach.id}-${cb.value}`)?.value||'DE';
+          await sb.from('lehrperson_klassen').insert({
+            lehrperson_id:cb.value, klasse_id:id,
+            fach_id:fach.id, unterrichtssprache:lang
+          });
+        }
+      } else {
+        // Monolingual: Radio-Button
+        const radio=document.querySelector(`input[name="lp-fach-${fach.id}"]:checked`);
+        if(!radio||!radio.value) continue;
+        const lang=document.getElementById(`lp-lang-${fach.id}-${radio.value}`)?.value||'DE';
+        await sb.from('lehrperson_klassen').insert({
+          lehrperson_id:radio.value, klasse_id:id,
+          fach_id:fach.id, unterrichtssprache:lang
+        });
+      }
     }
   }
   await loadDBFromSupabase();
