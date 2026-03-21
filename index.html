@@ -517,13 +517,27 @@ async function renderDash(){
   if(!DEMO&&sb){
     const [kRes, lkRes, msRes] = await Promise.all([
       sb.from('klassen').select('*, schulen(name, city), klasse_faecher(faecher(name))'),
-      sb.from('lehrperson_klassen').select('*, klassen(id,name,stufe,schuljahr,schulen(name))').eq('lehrperson_id', CU.id),
+      sb.from('lehrperson_klassen').select('*, klassen(id,name,stufe,schuljahr,schulen(name)), fach_id, unterrichtssprache').eq('lehrperson_id', CU.id),
       sb.from('schueler_milestones').select('validiert_status, schueler_id'),
     ]);
     klassen = kRes.data||[];
-    myKlassen = lkRes.data||[];
+    // Deduplizieren: pro Klasse nur ein Eintrag (bilingual = mehrere LP-Einträge pro Klasse)
+    const lkRaw=lkRes.data||[];
+    const seenKlassen=new Set();
+    myKlassen=lkRaw.filter(lk=>{
+      const kid=lk.klassen?.id;
+      if(!kid||seenKlassen.has(kid)) return false;
+      seenKlassen.add(kid);
+      return true;
+    });
+    // Fächer pro Klasse sammeln
+    myKlassen=myKlassen.map(lk=>{
+      const faecher=lkRaw.filter(x=>x.klassen?.id===lk.klassen?.id).map(x=>({
+        fachId:x.fach_id, lang:x.unterrichtssprache
+      }));
+      return {...lk, alleFaecher:faecher};
+    });
     msStatus = msRes.data||[];
-    // Nur Schüler aus eigenen Klassen laden
     const myKlassenIds = myKlassen.map(lk=>lk.klassen?.id).filter(Boolean);
     if(myKlassenIds.length>0){
       const{data:skData}=await sb.from('schueler_klassen').select('schueler_id').in('klasse_id',myKlassenIds);
@@ -552,7 +566,7 @@ async function renderDash(){
       <div class="stat"><div class="stat-val" style="color:var(--teal)">${students.length}</div><div class="stat-label">${t('schuelerinnen')}</div></div>
       <div class="stat"><div class="stat-val" style="color:var(--teal)">${avgProgress}%</div><div class="stat-label">${t('fortschritt')}</div></div>
       <div class="stat"><div class="stat-val" style="color:var(--red)">${students.filter(s=>!s.aktiv).length}</div><div class="stat-label">${t('alerts')}</div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--purple)">${myKlassen.length}</div><div class="stat-label">Meine Klassen</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--purple)">${myKlassen.length}</div><div class="stat-label">Meine Klasse${myKlassen.length!==1?'n':''}</div></div>
     </div>
     <div class="g2">
       <div>
@@ -562,14 +576,18 @@ async function renderDash(){
             ? `<div style="color:var(--gray-m);font-size:13px;padding:8px 0;">Noch keine Klassen zugewiesen.<br><span style="font-size:11px;">Admin → Klassen & Fächer → Lehrperson zuweisen.</span></div>`
             : myKlassen.map(lk=>{
                 const k=lk.klassen;
-                return`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--border);">
-                  <div>
-                    <div style="font-weight:500;font-size:13px;">${k?.schulen?.name||'—'} · Klasse ${k?.name||'—'}</div>
-                    <div style="font-size:11px;color:var(--gray-m);">${k?.schuljahr||''} · Stufe ${k?.stufe||'—'}</div>
+                const faecherPills=(lk.alleFaecher||[]).map(f=>{
+                  const fachName=DB.faecher_list.find(x=>x.id===f.fachId)?.name||'';
+                  return fachName?`<span class="pill pill-amber" style="font-size:10px;">${fachName} ${f.lang}</span>`:'';
+                }).join('');
+                return`<div style="padding:10px 0;border-bottom:0.5px solid var(--border);">
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div>
+                      <div style="font-weight:500;font-size:13px;">${k?.schulen?.name||'—'} · Klasse ${k?.name||'—'}</div>
+                      <div style="font-size:11px;color:var(--gray-m);">${k?.schuljahr||''} · Stufe ${k?.stufe||'—'}</div>
+                    </div>
                   </div>
-                  <div style="display:flex;gap:4px;">
-                    <span class="pill pill-teal" style="font-size:10px;">${lk.unterrichtssprache||'DE'}</span>
-                  </div>
+                  ${faecherPills?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;">${faecherPills}</div>`:''}
                 </div>`;
               }).join('')}
         </div>
@@ -2738,38 +2756,31 @@ async function revertJahreswechsel(){
   if(schuljahre.length<2){alert('Nur ein Schuljahr vorhanden.');return;}
   const newSJ=schuljahre[schuljahre.length-1];
   const oldSJ=schuljahre[schuljahre.length-2];
-  if(!confirm('Jahreswechsel zurückstellen?\n\nKlassen '+newSJ+' werden gelöscht, Klassen '+oldSJ+' wieder aktiviert.')) return;
 
-  const res=document.getElementById('view-content');
+  // Direkt ohne confirm ausführen
   const statusEl=document.createElement('div');
   statusEl.className='alert alert-teal';
-  statusEl.style.marginBottom='12px';
-  res.prepend(statusEl);
-  statusEl.textContent='⏳ Lösche Klassen '+newSJ+'...';
+  statusEl.style.cssText='margin-bottom:12px;position:fixed;top:70px;right:20px;z-index:9999;min-width:300px;';
+  document.body.appendChild(statusEl);
+  statusEl.textContent='⏳ Revert '+newSJ+' läuft...';
 
-  // Alle Klassen des neuen SJ holen
   const{data:neueKlassen}=await sb.from('klassen').select('id').eq('schuljahr',newSJ);
-  const ids=(neueKlassen||[]).map(k=>k.id);
+  statusEl.textContent='⏳ Gefunden: '+(neueKlassen?.length||0)+' Klassen';
 
-  if(ids.length>0){
-    // Abhängigkeiten zuerst löschen
-    for(const id of ids){
-      await sb.from('schueler_klassen').delete().eq('klasse_id',id);
-      await sb.from('lehrperson_klassen').delete().eq('klasse_id',id);
-      await sb.from('klasse_faecher').delete().eq('klasse_id',id);
-    }
-    // Dann Klassen löschen — direkt nach schuljahr
-    const{error}=await sb.from('klassen').delete().eq('schuljahr',newSJ);
-    if(error){statusEl.className='alert alert-red';statusEl.textContent='Fehler: '+error.message;return;}
+  for(const k of neueKlassen||[]){
+    await sb.from('schueler_klassen').delete().eq('klasse_id',k.id);
+    await sb.from('lehrperson_klassen').delete().eq('klasse_id',k.id);
+    await sb.from('klasse_faecher').delete().eq('klasse_id',k.id);
   }
+  const{error}=await sb.from('klassen').delete().eq('schuljahr',newSJ);
+  if(error){statusEl.style.background='var(--red-l)';statusEl.textContent='Fehler: '+error.message;return;}
 
-  // Alte Klassen reaktivieren
   await sb.from('klassen').update({aktiv:true}).eq('schuljahr',oldSJ);
-
   statusEl.className='alert alert-green';
-  statusEl.textContent='✓ Zurückgestellt. Klassen '+newSJ+' gelöscht, Klassen '+oldSJ+' wieder aktiv.';
+  statusEl.style.cssText='margin-bottom:12px;position:fixed;top:70px;right:20px;z-index:9999;min-width:300px;';
+  statusEl.textContent='✓ Fertig! '+newSJ+' gelöscht, '+oldSJ+' aktiv.';
   await loadDBFromSupabase();
-  setTimeout(()=>renderJahreswechsel(),1500);
+  setTimeout(()=>{statusEl.remove();renderJahreswechsel();},2000);
 }
 
 // ═══════════════════════════════════════════════════════
