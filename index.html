@@ -2126,5 +2126,12 @@ async function boot(){
 
 boot();
 </script>
+
+<script data-cfasync="false">
+document.addEventListener('click', function(e) {
+  var el = e.target.closest('[data-view]');
+  if(el && typeof showView === 'function') showView(el.getAttribute('data-view'));
+});
+</script>
 </body>
 </html>
