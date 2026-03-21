@@ -514,16 +514,24 @@ async function renderDash(){
   // Load all data in parallel
   let students=[], klassen=[], msStatus=[], myKlassen=[];
   if(!DEMO&&sb){
-    const [sRes, kRes, lkRes, msRes] = await Promise.all([
-      sb.from('profiles').select('*').eq('rolle','schueler'),
+    const [kRes, lkRes, msRes] = await Promise.all([
       sb.from('klassen').select('*, schulen(name, city), klasse_faecher(faecher(name))'),
       sb.from('lehrperson_klassen').select('*, klassen(id,name,stufe,schuljahr,schulen(name))').eq('lehrperson_id', CU.id),
       sb.from('schueler_milestones').select('validiert_status, schueler_id'),
     ]);
-    students = sRes.data||[];
     klassen = kRes.data||[];
     myKlassen = lkRes.data||[];
     msStatus = msRes.data||[];
+    // Nur Schüler aus eigenen Klassen laden
+    const myKlassenIds = myKlassen.map(lk=>lk.klassen?.id).filter(Boolean);
+    if(myKlassenIds.length>0){
+      const{data:skData}=await sb.from('schueler_klassen').select('schueler_id').in('klasse_id',myKlassenIds);
+      const schuelerIds=[...new Set((skData||[]).map(x=>x.schueler_id))];
+      if(schuelerIds.length>0){
+        const{data:sData}=await sb.from('profiles').select('*').in('id',schuelerIds);
+        students=sData||[];
+      }
+    }
   }
 
   // Compute stats
