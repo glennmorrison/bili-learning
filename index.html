@@ -569,6 +569,7 @@ async function renderDash(){
   // Aktive Klasse (erste oder gewählte)
   const selKlasseId=window._dashKlasseId||(myKlassen[0]?.klassen?.id||null);
   if(!window._dashKlasseId && selKlasseId) window._dashKlasseId=selKlasseId;
+  setTimeout(()=>dashUpdateWoche(window._schulwoche||1),200);
   const selKlasse=myKlassen.find(lk=>lk.klassen?.id===selKlasseId)||myKlassen[0];
 
   // Compute stats
@@ -627,6 +628,18 @@ async function renderDash(){
           </div>`
           :`<div style="color:var(--gray-m);font-size:13px;">Noch keine Klassen zugewiesen.</div>`}
         </div>
+        <div class="card" style="margin-bottom:12px;border-top:3px solid var(--purple);">
+          <div class="card-title">Wo sind wir?</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <input type="number" min="1" max="36" id="dash-schulwoche"
+              value="${window._schulwoche||1}"
+              style="width:60px;border:1.5px solid var(--border);border-radius:var(--rs);padding:5px 8px;font-size:13px;font-family:var(--sans);outline:none;"
+              oninput="window._schulwoche=parseInt(this.value)||1;dashUpdateWoche(this.value)">
+            <span style="font-size:13px;color:var(--gray-m);">Schulwoche</span>
+            <span style="font-size:11px;color:var(--gray-m);margin-left:auto;" id="dash-quartal"></span>
+          </div>
+          <div id="dash-woche-content" style="font-size:12px;color:var(--gray-m);">Schulwoche eingeben…</div>
+        </div>
         <div class="card">
           <div class="card-title">Schnellaktionen</div>
           <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
@@ -669,6 +682,79 @@ async function renderDash(){
     </div>`;
 }
 
+
+
+// ═══════════════════════════════════════════════════════
+// SCHULWOCHE — WO SIND WIR?
+// ═══════════════════════════════════════════════════════
+async function dashUpdateWoche(woche){
+  const w=parseInt(woche)||1;
+  const el=document.getElementById('dash-woche-content');
+  const qEl=document.getElementById('dash-quartal');
+  if(!el) return;
+
+  // Quartal bestimmen
+  const quartal=w<=10?'Herbst':w<=19?'Winter':w<=30?'Frühling':'Sommer';
+  if(qEl) qEl.textContent=quartal;
+
+  // Milestones dieser Woche aus DB laden
+  const{data:mappings}=await sb.from('lehrmittel_mapping')
+    .select('*, milestones(id,code,title_de,unit)')
+    .lte('schulwoche_von',w)
+    .gte('schulwoche_bis',w);
+
+  if(!mappings?.length){
+    el.innerHTML='<div style="color:var(--gray-m);">Keine Lehrmittel-Daten für diese Woche.</div>';
+    return;
+  }
+
+  // Milestone-Status der Schüler
+  const{data:lkData}=await sb.from('lehrperson_klassen').select('klasse_id').eq('lehrperson_id',CU.id);
+  const alleKlassenIds=[...new Set((lkData||[]).map(x=>x.klasse_id))];
+  const targetKlasseId=window._dashKlasseId&&alleKlassenIds.includes(window._dashKlasseId)?window._dashKlasseId:alleKlassenIds[0];
+  let schueler=[], msStatus=[];
+  if(targetKlasseId){
+    const{data:skData}=await sb.from('schueler_klassen').select('schueler_id').eq('klasse_id',targetKlasseId);
+    const ids=[...new Set((skData||[]).map(x=>x.schueler_id))];
+    if(ids.length){
+      const msIds=mappings.map(m=>m.milestone_id);
+      const[{data:sData},{data:msData}]=await Promise.all([
+        sb.from('profiles').select('id,vorname,nachname').in('id',ids),
+        sb.from('schueler_milestones').select('schueler_id,milestone_id,validiert_status').in('schueler_id',ids).in('milestone_id',msIds)
+      ]);
+      schueler=sData||[];
+      msStatus=msData||[];
+    }
+  }
+
+  // Themenblöcke gruppieren
+  const bloecke=[...new Map(mappings.map(m=>[m.themenblock,m])).values()];
+
+  el.innerHTML=bloecke.map(b=>{
+    const bMappings=mappings.filter(m=>m.themenblock===b.themenblock);
+    const msListe=bMappings.map(m=>m.milestones).filter(Boolean);
+    return`<div style="margin-bottom:10px;">
+      <div style="font-weight:600;color:var(--gray);margin-bottom:4px;">
+        📖 Kap. ${b.kapitel_nr} · ${b.themenblock}
+        <span style="font-weight:400;color:var(--gray-m);font-size:10px;margin-left:4px;">${b.quartal} · Wo. ${b.schulwoche_von}–${b.schulwoche_bis}</span>
+      </div>
+      ${msListe.map(ms=>{
+        const validated=schueler.filter(s=>msStatus.find(x=>x.schueler_id===s.id&&x.milestone_id===ms.id&&x.validiert_status>=2));
+        const inProgress=schueler.filter(s=>msStatus.find(x=>x.schueler_id===s.id&&x.milestone_id===ms.id&&x.validiert_status<2&&x.validiert_status>=0)&&!msStatus.find(x=>x.schueler_id===s.id&&x.milestone_id===ms.id&&x.validiert_status>=2));
+        const notStarted=schueler.filter(s=>!msStatus.find(x=>x.schueler_id===s.id&&x.milestone_id===ms.id));
+        return`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);">
+          <code style="font-size:9px;background:var(--purple-l);color:var(--purple);padding:1px 5px;border-radius:3px;flex-shrink:0;">${ms.code}</code>
+          <span style="flex:1;font-size:11px;">${ms.title_de}</span>
+          <div style="display:flex;gap:3px;">
+            ${validated.length?`<span class="pill pill-green" style="font-size:9px;">✓ ${validated.length}</span>`:''}
+            ${notStarted.length?`<span class="pill pill-red" style="font-size:9px;">— ${notStarted.length}</span>`:''}
+          </div>
+          ${notStarted.length?`<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:2px 6px;" onclick="window._genSchuelerID='';window._dashKlasseId='${targetKlasseId}';tNav('generator')">Aufgabe</button>`:''}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
 
 // ═══════════════════════════════════════════════════════
 // KLASSEN-MATRIX
